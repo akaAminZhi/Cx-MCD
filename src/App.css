@@ -1,0 +1,56 @@
+@import "tailwindcss";
+@layer base {
+  html {
+    font-size: 62.5%;
+  }
+  body {
+    font-family: "Poppins", sans-serif;
+    color: #374151;
+    transition:
+      color 0.3s,
+      background-color 0.3s;
+    min-height: 100vh;
+    line-height: 1.5;
+    font-size: 1.6rem;
+  }
+  html {
+    font-size: 62.5%;
+  }
+
+  button:focus,
+  textarea:focus,
+  select:focus {
+    @apply outline outline-2 outline-offset-[-1px];
+    outline-color: #4f46e5;
+  }
+}
+@layer components {
+  /* For Chrome, Safari */
+  .progress-bar::-webkit-progress-bar {
+    border-radius: 100px;
+    @apply bg-indigo-200; /* Background color of the progress bar */
+  }
+  .progress-bar::-webkit-progress-value {
+    border-radius: 100px;
+    @apply bg-indigo-700; /* Color for the filled part */
+  }
+  /* For Firefox */
+  .progress-bar::-moz-progress-bar {
+    border-radius: 100px;
+    @apply bg-indigo-700;
+  }
+}
+.react-datepicker,
+.react-datepicker__current-month,
+.react-datepicker__day-name,
+.react-datepicker__day,
+.react-datepicker__time-name {
+  font-size: 1.1rem; /* 默认 0.85rem，可根据喜好调大 */
+}
+
+/* 弹出层整体尺寸 */
+.react-datepicker {
+  transform: scale(1.2); /* 放大整个窗口 */
+  transform-origin: top left;
+  font-size: 1.1rem;
+}
