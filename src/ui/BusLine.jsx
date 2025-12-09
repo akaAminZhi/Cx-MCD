@@ -1,5 +1,6 @@
 // src/ui/BusLine.jsx
 import PropTypes from "prop-types";
+import { COLOR_MAP } from "../utils/constans";
 
 function rectToSegment(rect) {
   const [x1, y1, x2, y2] = rect;
@@ -22,13 +23,20 @@ export default function BusLine({
   color = "#111",
   width = 6,
   dashed = false,
+  energized = false,
+  energizedToday = false,
   onClick,
+
   onMouseEnter,
   onMouseMove,
   onMouseLeave,
 }) {
   const { a, b } = rectToSegment(rect_px);
-
+  const getFillColor = () => {
+    if (energizedToday) return COLOR_MAP.orange500;
+    if (energized) return COLOR_MAP.red500;
+    return "#111";
+  };
   return (
     <g data-id={id}>
       {/* 可见总线 */}
@@ -37,7 +45,7 @@ export default function BusLine({
         y1={a[1]}
         x2={b[0]}
         y2={b[1]}
-        stroke={color}
+        stroke={getFillColor()}
         strokeWidth={width}
         strokeLinecap="round"
         vectorEffect="non-scaling-stroke"

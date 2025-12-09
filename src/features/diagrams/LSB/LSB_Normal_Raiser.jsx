@@ -35,8 +35,9 @@ function LSB_Normal_Raiser({
   const level_line = Equipement.filter((item) => item.subject === "Level Line");
   const wall = Equipement.filter((item) => item.subject === "Wall");
 
-  const cable = Cable.filter((item) => item.subject === "PolyLine");
-  const bus = Cable.filter((item) => item.subject === "Bus");
+  const cable = Equipement.filter((item) => item.subject === "PolyLine");
+  // console.log("cable", Equipement);
+  const bus = Equipement.filter((item) => item.subject === "Bus");
   const cablesData = cable.map((it) => ({
     id: it.id,
     points: it.polygon_points_px, // ✅ CableBridges/PolylineCable 需要的字段名
@@ -120,10 +121,16 @@ function LSB_Normal_Raiser({
           key={item.id}
           id={item.id}
           points={item.polygon_points_px}
+          energized={item.energized}
         />
       ))}
       {bus.map((item) => (
-        <BusLine key={item.id} id={item.id} rect_px={item.rect_px} />
+        <BusLine
+          key={item.id}
+          id={item.id}
+          rect_px={item.rect_px}
+          energized={item.energized}
+        />
       ))}
       {/* <CableBridges cables={cablesData} bgColor="#fff" /> */}
       <CableBridgesArc cables={cablesData} bgColor="#fff" radius={2} gap={4} />
