@@ -1,7 +1,7 @@
 // src/features/devices/useSearchDevices.js
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 function useDebounce(value, delay = 300) {
   const [v, setV] = useState(value);
@@ -19,15 +19,24 @@ async function searchDevices({ q, page = 1, size = 20, project, file_page }) {
   return res.data; // 期望是一个数组或 {items:[], total:...}
 }
 
-export function useSearchDevices(params) {
-  const debounced = {
-    ...params,
-    q: useDebounce(params.q, 300),
-  };
+export function useSearchDevices({
+  q,
+  page = 1,
+  size = 20,
+  project,
+  file_page,
+}) {
+  const debouncedQ = useDebounce(q, 300);
+
+  const queryParams = useMemo(
+    () => ({ q: debouncedQ, page, size, project, file_page }),
+    [debouncedQ, page, size, project, file_page]
+  );
+
   return useQuery({
-    queryKey: ["device-search", debounced],
-    queryFn: () => searchDevices(debounced),
-    enabled: !!debounced.q && debounced.q.length >= 2 && !!debounced.project,
+    queryKey: ["device-search", project, file_page, page, size, debouncedQ],
+    queryFn: () => searchDevices(queryParams),
+    enabled: !!debouncedQ && debouncedQ.length >= 2 && !!project,
     staleTime: 60 * 1000,
   });
 }
