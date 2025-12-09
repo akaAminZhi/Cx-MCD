@@ -1,10 +1,11 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import Button from "./Button";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { HiOutlinePencilSquare, HiOutlineCheck } from "react-icons/hi2"; // ⬅️ 图标
 
 /**
  * 设备编辑表单
@@ -14,6 +15,10 @@ import "react-datepicker/dist/react-datepicker.css";
  *  - closeModal: Modal.Window 通过 cloneElement 注入的关闭函数
  */
 export default function DeviceEditor({ device, projectId, closeModal }) {
+  // === 新增：name 编辑相关 state ===
+  const [name, setName] = useState(device?.text || device?.name || "");
+  const [isEditingName, setIsEditingName] = useState(false);
+
   const [comments, setComments] = useState(device?.comments ?? "");
   const [energized, setEnergized] = useState(!!device?.energized);
   const [energizedToday, setEnergizedToday] = useState(
@@ -25,6 +30,9 @@ export default function DeviceEditor({ device, projectId, closeModal }) {
 
   // 当切换不同的 device 时，同步表单初值
   useEffect(() => {
+    setName(device?.text || device?.name || "");
+    setIsEditingName(false); // 切换设备时关闭编辑状态
+
     setComments(device?.comments ?? "");
     setEnergized(!!device?.energized);
     setEnergizedToday(!!device?.energized_today);
@@ -58,9 +66,34 @@ export default function DeviceEditor({ device, projectId, closeModal }) {
       <h3 className="text-2xl font-semibold">Device detail</h3>
 
       <div className="grid grid-cols-[20rem_1fr] gap-y-4 gap-x-8">
+        {/* === Name 行，增加图标 + 可编辑输入框 === */}
         <div className="text-gray-600">Name</div>
-        <div className="font-medium break-words">
-          {device.text || device.name}
+        <div className="flex items-center gap-2 font-medium break-words">
+          {isEditingName ? (
+            <input
+              className="border rounded px-3 py-2 text-2xl flex-1 min-w-0"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              autoFocus
+            />
+          ) : (
+            <span className="flex-1 min-w-0 truncate">
+              {name || device.text || device.name || "-"}
+            </span>
+          )}
+
+          <button
+            type="button"
+            className="p-1 rounded hover:bg-gray-200 flex-shrink-0"
+            onClick={() => setIsEditingName((prev) => !prev)}
+            title={isEditingName ? "Finish editing" : "Edit name"}
+          >
+            {isEditingName ? (
+              <HiOutlineCheck className="w-10 h-10 text-green-600" />
+            ) : (
+              <HiOutlinePencilSquare className="w-10 h-10" />
+            )}
+          </button>
         </div>
 
         <div className="text-gray-600">ID</div>
@@ -77,7 +110,6 @@ export default function DeviceEditor({ device, projectId, closeModal }) {
             popperPlacement="bottom-start"
             className="border rounded px-4 py-3 w-full bg-white cursor-pointer text-2xl"
           />
-          {/* 若需显示只读文本而点击再弹出，可包一层 Button/Div 去控制 DatePicker 的 open/close */}
         </div>
 
         <div className="text-gray-600">Energized Today</div>
@@ -131,6 +163,9 @@ export default function DeviceEditor({ device, projectId, closeModal }) {
               id: device.id,
               project: projectId,
               payload: {
+                // ⬅️ 这里把 name 一并传给后端
+                // 根据你后端字段名改：如果用 text 就换成 text: name
+                text: name,
                 comments,
                 energized,
                 energized_today: energized ? false : energizedToday,
