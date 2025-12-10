@@ -39,31 +39,75 @@ function LSB_Normal_Raiser({
     highlightDeviceId && Equipement.find((d) => d.id === highlightDeviceId);
   const rect = selected?.rect_px;
 
+  const {
+    panelboards,
+    transforms,
+    room_line,
+    level_line,
+    wall,
+    cable,
+    bus,
+    cablesData,
+  } = useMemo(() => {
+    const panelboards = [];
+    const transforms = [];
+    const room_line = [];
+    const level_line = [];
+    const wall = [];
+    const cable = [];
+    const bus = [];
+
+    Equipement.forEach((item) => {
+      switch (item.subject) {
+        case "panel board":
+          panelboards.push(item);
+          break;
+        case "transformer":
+          transforms.push(item);
+          break;
+        case "Room Line":
+          room_line.push(item);
+          break;
+        case "Level Line":
+          level_line.push(item);
+          break;
+        case "Wall":
+          wall.push(item);
+          break;
+        case "PolyLine":
+          cable.push(item);
+          break;
+        case "Bus":
+        case "Bus Duct":
+          bus.push(item);
+          break;
+        default:
+          break;
+      }
+    });
+
+    const cablesData = cable.map((it) => ({
+      id: it.id,
+      points: it.polygon_points_px,
+      color: "#111",
+      width: 4,
+      z: 0,
+    }));
+
+    return {
+      panelboards,
+      transforms,
+      room_line,
+      level_line,
+      wall,
+      cable,
+      bus,
+      cablesData,
+    };
+  }, [Equipement]);
+
   // 2️⃣ hooks 全部声明完之后，再根据 isLoading 决定渲染什么
   if (isLoading) return <Spinner />;
-
-  const panelboards = Equipement.filter(
-    (item) => item.subject === "panel board"
-  );
-  const transforms = Equipement.filter(
-    (item) => item.subject === "transformer"
-  );
-  const room_line = Equipement.filter((item) => item.subject === "Room Line");
-  const level_line = Equipement.filter((item) => item.subject === "Level Line");
-  const wall = Equipement.filter((item) => item.subject === "Wall");
-
-  const cable = Equipement.filter((item) => item.subject === "PolyLine");
-  const bus = Equipement.filter(
-    (item) => item.subject === "Bus" || item.subject === "Bus Duct"
-  );
-
-  const cablesData = cable.map((it) => ({
-    id: it.id,
-    points: it.polygon_points_px,
-    color: "#111",
-    width: 4,
-    z: 0,
-  }));
 
   // 点击某条 cable：如果已展开就收起；没展开就加入集合
   const handleCableClick = (id) => {

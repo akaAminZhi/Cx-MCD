@@ -145,15 +145,18 @@ function DiagramInner({ active, projectId, onSelectDevice }) {
   const panZoomRef = panZoomRefs.current[active];
   const panZoomStateRef = panZoomStateRefs.current[active];
 
-  const diagramProps = {
-    onNodeEnter: (e, payload) =>
-      showTip(e, payload?.tooltip ?? payload?.name ?? "Unknown"),
-    onNodeMove: (e, payload) =>
-      moveTip(e, payload?.tooltip ?? payload?.name ?? "Unknown"),
-    onNodeLeave: hideTip,
-    onNodeClick, // ✅ 用到上面的 open
-  };
-
+  // ⭐ 关键：用 useMemo 固定传给 <Component> 的回调对象
+  const diagramCallbacks = React.useMemo(
+    () => ({
+      onNodeEnter: (e, payload) =>
+        showTip(e, payload?.tooltip ?? payload?.name ?? "Unknown"),
+      onNodeMove: (e, payload) =>
+        moveTip(e, payload?.tooltip ?? payload?.name ?? "Unknown"),
+      onNodeLeave: hideTip,
+      onNodeClick,
+    }),
+    [showTip, moveTip, hideTip, onNodeClick]
+  );
   return (
     <div ref={containerRef} style={{ position: "relative", height: 800 }}>
       <div className="absolute z-10 left-2 top-2 bg-white/85 backdrop-blur px-2 py-2 rounded shadow">
@@ -172,7 +175,7 @@ function DiagramInner({ active, projectId, onSelectDevice }) {
       >
         {/* 把 highlightDeviceId 传给子图层绘制高亮 */}
         <Component
-          {...diagramProps}
+          {...diagramCallbacks}
           highlightDeviceId={highlightDeviceId}
           selectedDevice={selectedDevice}
         />
