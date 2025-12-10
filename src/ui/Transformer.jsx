@@ -8,10 +8,11 @@
  *   name="XFMR-1"
  * />
  */
+import React from "react";
 import FlashIcon from "./FlashIcon";
 import PropTypes from "prop-types";
 
-export default function Transformer({
+function Transformer({
   x1,
   y1,
   x2,
@@ -134,3 +135,18 @@ Transformer.propTypes = {
 
   energized: PropTypes.bool,
 };
+
+function isEqual(prev, next) {
+  return (
+    prev.x1 === next.x1 &&
+    prev.y1 === next.y1 &&
+    prev.x2 === next.x2 &&
+    prev.y2 === next.y2 &&
+    prev.stroke === next.stroke &&
+    prev.strokeWidth === next.strokeWidth &&
+    prev.energized === next.energized &&
+    prev.name === next.name
+  );
+}
+
+export default React.memo(Transformer, isEqual);

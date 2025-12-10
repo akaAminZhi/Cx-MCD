@@ -1,3 +1,4 @@
+import React from "react";
 import PropTypes from "prop-types";
 
 const Arrow_line = ({ x1, y1, x2, y2, label }) => {
@@ -40,4 +41,15 @@ Arrow_line.propTypes = {
   y2: PropTypes.number,
   energized: PropTypes.bool,
 };
-export default Arrow_line;
+
+function isEqual(prev, next) {
+  return (
+    prev.x1 === next.x1 &&
+    prev.y1 === next.y1 &&
+    prev.x2 === next.x2 &&
+    prev.y2 === next.y2 &&
+    prev.label === next.label
+  );
+}
+
+export default React.memo(Arrow_line, isEqual);
