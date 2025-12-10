@@ -1,8 +1,9 @@
 // src/ui/PolylineCable.jsx
+import React from "react";
 import PropTypes from "prop-types";
 import { COLOR_MAP } from "../utils/constans";
 
-export default function PolylineCable({
+function PolylineCable({
   id,
   points = [], // [[x,y], [x,y], ...]
   color = "#111",
@@ -152,3 +153,30 @@ PolylineCable.propTypes = {
   onMouseMove: PropTypes.func,
   onMouseLeave: PropTypes.func,
 };
+
+function arePointsEqual(prevPoints = [], nextPoints = []) {
+  if (prevPoints.length !== nextPoints.length) return false;
+  for (let i = 0; i < prevPoints.length; i++) {
+    const [px, py] = prevPoints[i] || [];
+    const [nx, ny] = nextPoints[i] || [];
+    if (px !== nx || py !== ny) return false;
+  }
+  return true;
+}
+
+function isEqual(prev, next) {
+  return (
+    prev.id === next.id &&
+    prev.width === next.width &&
+    prev.dashed === next.dashed &&
+    prev.energized === next.energized &&
+    prev.energizedToday === next.energizedToday &&
+    prev.arrowType === next.arrowType &&
+    prev.label === next.label &&
+    prev.showLabel === next.showLabel &&
+    prev.color === next.color &&
+    arePointsEqual(prev.points, next.points)
+  );
+}
+
+export default React.memo(PolylineCable, isEqual);

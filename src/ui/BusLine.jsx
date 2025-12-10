@@ -1,4 +1,5 @@
 // src/ui/BusLine.jsx
+import React from "react";
 import PropTypes from "prop-types";
 import { COLOR_MAP } from "../utils/constans";
 
@@ -17,7 +18,7 @@ function rectToSegment(rect) {
   }
 }
 
-export default function BusLine({
+function BusLine({
   id,
   rect_px,
   color = "#111",
@@ -82,3 +83,17 @@ BusLine.propTypes = {
   onMouseMove: PropTypes.func,
   onMouseLeave: PropTypes.func,
 };
+
+function isEqual(prev, next) {
+  return (
+    prev.id === next.id &&
+    prev.width === next.width &&
+    prev.dashed === next.dashed &&
+    prev.energized === next.energized &&
+    prev.energizedToday === next.energizedToday &&
+    prev.rect_px?.length === next.rect_px?.length &&
+    prev.rect_px?.every((value, idx) => value === next.rect_px?.[idx])
+  );
+}
+
+export default React.memo(BusLine, isEqual);

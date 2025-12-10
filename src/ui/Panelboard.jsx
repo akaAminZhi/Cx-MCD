@@ -1,3 +1,4 @@
+import React from "react";
 import FlashIcon from "./FlashIcon";
 import PropTypes from "prop-types";
 import { COLOR_MAP } from "../utils/constans";
@@ -106,4 +107,16 @@ Panelboard.propTypes = {
   onMouseLeave: PropTypes.func,
 };
 
-export default Panelboard;
+function isEqual(prev, next) {
+  return (
+    prev.x1 === next.x1 &&
+    prev.y1 === next.y1 &&
+    prev.x2 === next.x2 &&
+    prev.y2 === next.y2 &&
+    prev.name === next.name &&
+    prev.energized === next.energized &&
+    prev.energizedToday === next.energizedToday
+  );
+}
+
+export default React.memo(Panelboard, isEqual);
