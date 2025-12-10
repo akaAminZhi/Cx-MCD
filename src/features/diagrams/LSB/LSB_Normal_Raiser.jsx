@@ -1,5 +1,4 @@
-import React from "react";
-// import Equipement from "../../../data/equipment0.json";
+import React, { useState, useMemo } from "react";
 import Transformer from "../../../ui/Transformer";
 import Arrow_line from "../../../ui/Arrow_line";
 import Panelboard from "../../../ui/Panelboard";
@@ -7,9 +6,8 @@ import useProjecDevices from "../../../hooks/useProjectDevices";
 import Spinner from "../../../ui/Spinner";
 import PolylineCable from "../../../ui/PolylineCable";
 import BusLine from "../../../ui/BusLine";
-import Cable from "../../../data/equipment_info_bus_to_panel.json";
-// import CableBridges from "../../../ui/CableBridges";
 import CableBridgesArc from "../../../ui/CableBridgesArc";
+
 function LSB_Normal_Raiser({
   onNodeEnter,
   onNodeMove,
@@ -17,13 +15,32 @@ function LSB_Normal_Raiser({
   onNodeClick,
   highlightDeviceId,
 }) {
+  // 1️⃣ 所有 hooks 放最上面，顺序每次 render 都一样
   const { data, isLoading, error } = useProjecDevices("lsb");
-  if (isLoading) return <Spinner></Spinner>;
 
-  const Equipement = data.data.filter((item) => item.file_page === 1);
+  // 多个可以同时展开
+  const [expandedCableIds, setExpandedCableIds] = useState(() => new Set());
 
-  const selected = Equipement.find((d) => d.id === highlightDeviceId);
+  // data 还没来时，Equipement 就是空数组，避免 undefined 报错
+  const Equipement = useMemo(() => {
+    if (!data?.data) return [];
+    return data.data.filter((item) => item.file_page === 1);
+  }, [data]);
+
+  const deviceMap = useMemo(() => {
+    const m = {};
+    Equipement.forEach((d) => {
+      m[d.id] = d;
+    });
+    return m;
+  }, [Equipement]);
+
+  const selected =
+    highlightDeviceId && Equipement.find((d) => d.id === highlightDeviceId);
   const rect = selected?.rect_px;
+
+  // 2️⃣ hooks 全部声明完之后，再根据 isLoading 决定渲染什么
+  if (isLoading) return <Spinner />;
 
   const panelboards = Equipement.filter(
     (item) => item.subject === "panel board"
@@ -36,18 +53,33 @@ function LSB_Normal_Raiser({
   const wall = Equipement.filter((item) => item.subject === "Wall");
 
   const cable = Equipement.filter((item) => item.subject === "PolyLine");
-  // console.log("cable", Equipement);
-  const bus = Equipement.filter((item) => item.subject === "Bus");
+  const bus = Equipement.filter(
+    (item) => item.subject === "Bus" || item.subject === "Bus Duct"
+  );
+
   const cablesData = cable.map((it) => ({
     id: it.id,
-    points: it.polygon_points_px, // ✅ CableBridges/PolylineCable 需要的字段名
+    points: it.polygon_points_px,
     color: "#111",
     width: 4,
     z: 0,
   }));
+
+  // 点击某条 cable：如果已展开就收起；没展开就加入集合
+  const handleCableClick = (id) => {
+    setExpandedCableIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id); // 如果不想收起，就把这两行删掉
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
   return (
     <>
-      {/* <PanelboardGroup  panelboards={panelboards} /> */}
       {panelboards.map((item) => (
         <Panelboard
           key={item.id}
@@ -59,23 +91,26 @@ function LSB_Normal_Raiser({
           energized={item.energized}
           energizedToday={item.energized_today}
           onClick={() => onNodeClick?.(item)}
-          // 命中层上的鼠标事件：传 event + payload
           onMouseEnter={(e) =>
             onNodeEnter?.(e, {
               ...item,
-              tooltip: `${item.text} • ${item.energized ? "Energized" : "De-energized"}`,
+              tooltip: `${item.text} • ${
+                item.energized ? "Energized" : "De-energized"
+              }`,
             })
           }
           onMouseMove={(e) =>
             onNodeMove?.(e, {
               ...item,
-              tooltip: `${item.text} • ${item.energized ? "Energized" : "De-energized"}`,
+              tooltip: `${item.text} • ${
+                item.energized ? "Energized" : "De-energized"
+              }`,
             })
           }
           onMouseLeave={() => onNodeLeave?.()}
         />
       ))}
-      {/* <Transformer/> */}
+
       {transforms.map((item) => (
         <Transformer
           key={item.id}
@@ -86,6 +121,7 @@ function LSB_Normal_Raiser({
           y2={item.rect_px[3]}
         />
       ))}
+
       {room_line.map((item) => (
         <Arrow_line
           key={item.id}
@@ -96,6 +132,7 @@ function LSB_Normal_Raiser({
           y2={item.rect_px[1]}
         />
       ))}
+
       {level_line.map((item) => (
         <Arrow_line
           key={item.id}
@@ -106,6 +143,7 @@ function LSB_Normal_Raiser({
           y2={item.rect_px[1]}
         />
       ))}
+
       {wall.map((item) => (
         <Arrow_line
           key={item.id}
@@ -116,14 +154,62 @@ function LSB_Normal_Raiser({
           y2={item.rect_px[3]}
         />
       ))}
-      {cable.map((item) => (
-        <PolylineCable
-          key={item.id}
-          id={item.id}
-          points={item.polygon_points_px}
-          energized={item.energized}
-        />
-      ))}
+
+      {/* ⭐ Cable 渲染：可以展开多条 */}
+      {cable.map((item) => {
+        const expanded = expandedCableIds.has(item.id);
+        const hasShort =
+          item.short_segments_px &&
+          Array.isArray(item.short_segments_px.head) &&
+          Array.isArray(item.short_segments_px.tail);
+
+        const onCableClick = () => handleCableClick(item.id);
+
+        // 没有 short 或者已经展开 → 画整条线（不查 from/to）
+        if (!hasShort || expanded) {
+          return (
+            <PolylineCable
+              key={item.id}
+              id={item.id}
+              points={item.polygon_points_px}
+              energized={item.energized}
+              energizedToday={item.energized_today}
+              onClick={onCableClick}
+            />
+          );
+        }
+
+        // 只有需要画 head/tail 时才从 map 里拿设备
+        const fromDevice = deviceMap[item.from];
+        const toDevice = deviceMap[item.to];
+
+        return (
+          <React.Fragment key={item.id}>
+            {/* head → to XXX */}
+            <PolylineCable
+              id={`${item.id}-head`}
+              points={item.short_segments_px.head}
+              energized={item.energized}
+              energizedToday={item.energized_today}
+              arrowType="head"
+              label={toDevice?.text}
+              onClick={onCableClick}
+            />
+
+            {/* tail → from XXX */}
+            <PolylineCable
+              id={`${item.id}-tail`}
+              points={item.short_segments_px.tail}
+              energized={item.energized}
+              energizedToday={item.energized_today}
+              arrowType="tail"
+              label={fromDevice?.text}
+              onClick={onCableClick}
+            />
+          </React.Fragment>
+        );
+      })}
+
       {bus.map((item) => (
         <BusLine
           key={item.id}
@@ -132,12 +218,12 @@ function LSB_Normal_Raiser({
           energized={item.energized}
         />
       ))}
-      {/* <CableBridges cables={cablesData} bgColor="#fff" /> */}
+
       <CableBridgesArc cables={cablesData} bgColor="#fff" radius={2} gap={4} />
+
       {Array.isArray(rect) && rect.length === 4 && (
         <>
           <defs>
-            {/* 发光滤镜（可选） */}
             <filter id="hl-glow" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="4" result="blur" />
               <feMerge>
@@ -148,7 +234,6 @@ function LSB_Normal_Raiser({
           </defs>
 
           <g pointerEvents="none">
-            {/* 实线高亮框 */}
             <rect
               x={rect[0]}
               y={rect[1]}
@@ -160,7 +245,6 @@ function LSB_Normal_Raiser({
               vectorEffect="non-scaling-stroke"
               filter="url(#hl-glow)"
             />
-            {/* 叠一层虚线，让效果更明显（可选） */}
             <rect
               x={rect[0]}
               y={rect[1]}
