@@ -51,7 +51,7 @@ function LSB_Emergency_Raiser({
     wall,
     cable,
     bus,
-    cablesData,
+
     breakers,
     busBreakers,
   } = useMemo(() => {
@@ -104,14 +104,6 @@ function LSB_Emergency_Raiser({
       }
     });
 
-    const cablesData = cable.map((it) => ({
-      id: it.id,
-      points: it.polygon_points_px,
-      color: "#111",
-      width: 4,
-      z: 0,
-    }));
-
     return {
       panelboards,
       transforms,
@@ -121,12 +113,32 @@ function LSB_Emergency_Raiser({
       cable,
       generator,
       bus,
-      cablesData,
+
       breakers,
       busBreakers,
     };
   }, [Equipement]);
 
+  const bridgeCables = useMemo(() => {
+    return cable
+      .filter((item) => {
+        const hasShort =
+          item.short_segments_px &&
+          Array.isArray(item.short_segments_px.head) &&
+          Array.isArray(item.short_segments_px.tail);
+
+        const expanded = expandedCableIds.has(item.id);
+
+        return !hasShort || expanded; // 展开 or 本来就没 short → 画桥拱
+      })
+      .map((it) => ({
+        id: it.id,
+        points: it.polygon_points_px,
+        color: "#111",
+        width: 4,
+        z: 0,
+      }));
+  }, [cable, expandedCableIds]);
   // 2️⃣ hooks 全部声明完之后，再根据 isLoading 决定渲染什么
   if (isLoading) return <Spinner />;
 
@@ -330,10 +342,17 @@ function LSB_Emergency_Raiser({
           id={item.id}
           rect_px={item.rect_px}
           energized={item.energized}
+          energizedToday={item.energized_today}
+          onClick={() => onNodeClick?.(item)}
         />
       ))}
 
-      <CableBridgesArc cables={cablesData} bgColor="#fff" radius={2} gap={4} />
+      <CableBridgesArc
+        cables={bridgeCables}
+        bgColor="#fff"
+        radius={2}
+        gap={4}
+      />
       {breakers.map((item) => (
         <Breaker
           key={item.id}

@@ -11,7 +11,7 @@ function PolylineCable({
   dashed = false,
   energized = false,
   energizedToday = false,
-  highlight = false, // ⭐ 新增
+  highlight = false,
 
   // 箭头 & 文本
   arrowType, // "head" | "tail"
@@ -30,7 +30,6 @@ function PolylineCable({
   const strokeColor = (() => {
     if (energizedToday) return COLOR_MAP.orange500;
     if (energized) return COLOR_MAP.red500;
-    // ⭐ 没有 energized 信息但被展开时，用高亮色
     if (highlight) return COLOR_MAP.green500;
     return color || "#111";
   })();
@@ -54,6 +53,11 @@ function PolylineCable({
   const safeId = String(id || "cable").replace(/[^a-zA-Z0-9_-]/g, "_");
   const markerEndId = `arrow-end-${safeId}`;
   const markerStartId = `arrow-start-${safeId}`;
+
+  // ⭐ 箭头命中区域半径（可以根据喜好调大一点）
+  const hitRadius = Math.max(strokeWidth + 10, 14);
+
+  const cursor = onClick ? "pointer" : "default";
 
   return (
     <g data-id={id}>
@@ -99,7 +103,7 @@ function PolylineCable({
         markerStart={
           arrowType === "tail" ? `url(#${markerStartId})` : undefined
         }
-        style={{ cursor: onClick ? "pointer" : "default" }}
+        style={{ cursor }}
         onClick={onClick}
         onMouseEnter={onMouseEnter}
         onMouseMove={onMouseMove}
@@ -119,20 +123,57 @@ function PolylineCable({
         </text>
       )}
 
-      {/* 交互命中层 */}
-      <polyline
-        points={pointsStr}
-        fill="none"
-        stroke="transparent"
-        strokeWidth={Math.max(strokeWidth + 12, 16)}
-        vectorEffect="non-scaling-stroke"
-        pointerEvents="stroke"
-        style={{ cursor: onClick ? "pointer" : "default" }}
-        onClick={onClick}
-        onMouseEnter={onMouseEnter}
-        onMouseMove={onMouseMove}
-        onMouseLeave={onMouseLeave}
-      />
+      {/* 交互命中层：粗透明 polyline + 箭头区域的透明 circle */}
+      <g pointerEvents="stroke">
+        {/* 线条命中层 */}
+        <polyline
+          points={pointsStr}
+          fill="none"
+          stroke="transparent"
+          strokeWidth={Math.max(strokeWidth + 12, 16)}
+          vectorEffect="non-scaling-stroke"
+          pointerEvents="stroke"
+          style={{ cursor }}
+          onClick={onClick}
+          onMouseEnter={onMouseEnter}
+          onMouseMove={onMouseMove}
+          onMouseLeave={onMouseLeave}
+        />
+
+        {/* ⭐ 箭头命中 circle：head */}
+        {arrowType === "head" && end && (
+          <circle
+            cx={end[0]}
+            cy={end[1]}
+            r={hitRadius}
+            fill="transparent"
+            stroke="transparent"
+            pointerEvents="all"
+            style={{ cursor }}
+            onClick={onClick}
+            onMouseEnter={onMouseEnter}
+            onMouseMove={onMouseMove}
+            onMouseLeave={onMouseLeave}
+          />
+        )}
+
+        {/* ⭐ 箭头命中 circle：tail */}
+        {arrowType === "tail" && start && (
+          <circle
+            cx={start[0]}
+            cy={start[1]}
+            r={hitRadius}
+            fill="transparent"
+            stroke="transparent"
+            pointerEvents="all"
+            style={{ cursor }}
+            onClick={onClick}
+            onMouseEnter={onMouseEnter}
+            onMouseMove={onMouseMove}
+            onMouseLeave={onMouseLeave}
+          />
+        )}
+      </g>
     </g>
   );
 }
@@ -145,7 +186,7 @@ PolylineCable.propTypes = {
   dashed: PropTypes.bool,
   energized: PropTypes.bool,
   energizedToday: PropTypes.bool,
-  highlight: PropTypes.bool, // ⭐ 新增
+  highlight: PropTypes.bool,
 
   arrowType: PropTypes.oneOf(["head", "tail"]),
   label: PropTypes.string,
@@ -174,7 +215,7 @@ function isEqual(prev, next) {
     prev.dashed === next.dashed &&
     prev.energized === next.energized &&
     prev.energizedToday === next.energizedToday &&
-    prev.highlight === next.highlight && // ⭐ 新增比较
+    prev.highlight === next.highlight &&
     prev.arrowType === next.arrowType &&
     prev.label === next.label &&
     prev.showLabel === next.showLabel &&

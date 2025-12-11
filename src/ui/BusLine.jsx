@@ -26,6 +26,7 @@ function BusLine({
   dashed = false,
   energized = false,
   energizedToday = false,
+  name,
   onClick,
 
   onMouseEnter,
@@ -38,6 +39,8 @@ function BusLine({
     if (energized) return COLOR_MAP.red500;
     return "#111";
   };
+  const midX = (a[0] + b[0]) / 2;
+  const midY = (a[1] + b[1]) / 2;
   return (
     <g data-id={id}>
       {/* 可见总线 */}
@@ -52,6 +55,18 @@ function BusLine({
         vectorEffect="non-scaling-stroke"
         strokeDasharray={dashed ? "8 8" : undefined}
       />
+      {name && (
+        <text
+          x={midX - 20}
+          y={midY - width * 2} // 在线条上方一点
+          textAnchor="middle"
+          fontSize={10}
+          fill="#333"
+          pointerEvents="none"
+        >
+          {name}
+        </text>
+      )}
       {/* 交互命中层 */}
       <line
         x1={a[0]}
@@ -91,6 +106,7 @@ function isEqual(prev, next) {
     prev.dashed === next.dashed &&
     prev.energized === next.energized &&
     prev.energizedToday === next.energizedToday &&
+    prev.name === next.name &&
     prev.rect_px?.length === next.rect_px?.length &&
     prev.rect_px?.every((value, idx) => value === next.rect_px?.[idx])
   );
