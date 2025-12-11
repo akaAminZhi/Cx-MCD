@@ -226,7 +226,7 @@ function LSB_Normal_Raiser({
           Array.isArray(item.short_segments_px.tail);
 
         const onCableClick = () => handleCableClick(item.id);
-
+        const highlight = expanded && !item.energized && !item.energized_today;
         // 没有 short 或者已经展开 → 画整条线（不查 from/to）
         if (!hasShort || expanded) {
           return (
@@ -236,6 +236,7 @@ function LSB_Normal_Raiser({
               points={item.polygon_points_px}
               energized={item.energized}
               energizedToday={item.energized_today}
+              highlight={highlight}
               onClick={onCableClick}
             />
           );

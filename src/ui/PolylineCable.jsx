@@ -11,6 +11,7 @@ function PolylineCable({
   dashed = false,
   energized = false,
   energizedToday = false,
+  highlight = false, // ⭐ 新增
 
   // 箭头 & 文本
   arrowType, // "head" | "tail"
@@ -29,6 +30,8 @@ function PolylineCable({
   const strokeColor = (() => {
     if (energizedToday) return COLOR_MAP.orange500;
     if (energized) return COLOR_MAP.red500;
+    // ⭐ 没有 energized 信息但被展开时，用高亮色
+    if (highlight) return COLOR_MAP.green500;
     return color || "#111";
   })();
 
@@ -48,7 +51,6 @@ function PolylineCable({
     labelText = label ? `from ${label}` : "";
   }
 
-  // 为每根线生成独立的 marker id，避免全局 id 冲突
   const safeId = String(id || "cable").replace(/[^a-zA-Z0-9_-]/g, "_");
   const markerEndId = `arrow-end-${safeId}`;
   const markerStartId = `arrow-start-${safeId}`;
@@ -56,7 +58,6 @@ function PolylineCable({
   return (
     <g data-id={id}>
       <defs>
-        {/* 末端箭头：配合 markerEnd 使用 */}
         <marker
           id={markerEndId}
           viewBox="0 0 10 10"
@@ -70,7 +71,6 @@ function PolylineCable({
           <path d="M0,0 L10,5 L0,10 z" fill={strokeColor} />
         </marker>
 
-        {/* 起始箭头：配合 markerStart 使用 */}
         <marker
           id={markerStartId}
           viewBox="0 0 10 10"
@@ -145,6 +145,7 @@ PolylineCable.propTypes = {
   dashed: PropTypes.bool,
   energized: PropTypes.bool,
   energizedToday: PropTypes.bool,
+  highlight: PropTypes.bool, // ⭐ 新增
 
   arrowType: PropTypes.oneOf(["head", "tail"]),
   label: PropTypes.string,
@@ -173,6 +174,7 @@ function isEqual(prev, next) {
     prev.dashed === next.dashed &&
     prev.energized === next.energized &&
     prev.energizedToday === next.energizedToday &&
+    prev.highlight === next.highlight && // ⭐ 新增比较
     prev.arrowType === next.arrowType &&
     prev.label === next.label &&
     prev.showLabel === next.showLabel &&
