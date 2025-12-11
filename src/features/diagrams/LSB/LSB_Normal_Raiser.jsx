@@ -7,6 +7,8 @@ import Spinner from "../../../ui/Spinner";
 import PolylineCable from "../../../ui/PolylineCable";
 import BusLine from "../../../ui/BusLine";
 import CableBridgesArc from "../../../ui/CableBridgesArc";
+import Breaker from "../../../ui/Breaker";
+import BusBreaker from "../../../ui/BusBreaker";
 
 function LSB_Normal_Raiser({
   onNodeEnter,
@@ -48,6 +50,8 @@ function LSB_Normal_Raiser({
     cable,
     bus,
     cablesData,
+    breakers,
+    busBreakers,
   } = useMemo(() => {
     const panelboards = [];
     const transforms = [];
@@ -56,6 +60,8 @@ function LSB_Normal_Raiser({
     const wall = [];
     const cable = [];
     const bus = [];
+    const breakers = [];
+    const busBreakers = [];
 
     Equipement.forEach((item) => {
       switch (item.subject) {
@@ -76,6 +82,12 @@ function LSB_Normal_Raiser({
           break;
         case "PolyLine":
           cable.push(item);
+          break;
+        case "Breaker":
+          breakers.push(item);
+          break;
+        case "Bus Breaker":
+          busBreakers.push(item);
           break;
         case "Bus":
         case "Bus Duct":
@@ -103,6 +115,8 @@ function LSB_Normal_Raiser({
       cable,
       bus,
       cablesData,
+      breakers,
+      busBreakers,
     };
   }, [Equipement]);
 
@@ -120,6 +134,7 @@ function LSB_Normal_Raiser({
       }
       return next;
     });
+    onNodeLeave?.();
   };
 
   return (
@@ -163,6 +178,9 @@ function LSB_Normal_Raiser({
           y1={item.rect_px[1]}
           x2={item.rect_px[2]}
           y2={item.rect_px[3]}
+          energized={item.energized}
+          energizedToday={item.energized_today}
+          onClick={() => onNodeClick?.(item)}
         />
       ))}
 
@@ -236,8 +254,25 @@ function LSB_Normal_Raiser({
               energized={item.energized}
               energizedToday={item.energized_today}
               arrowType="head"
-              label={toDevice?.text}
+              showLabel={false} // ⭐ 不画 text，只用 tooltip
               onClick={onCableClick}
+              onMouseEnter={(e) =>
+                onNodeEnter?.(e, {
+                  ...item,
+                  tooltip: toDevice?.text
+                    ? `to ${toDevice.text}`
+                    : "to (unknown device)",
+                })
+              }
+              onMouseMove={(e) =>
+                onNodeMove?.(e, {
+                  ...item,
+                  tooltip: toDevice?.text
+                    ? `to ${toDevice.text}`
+                    : "to (unknown device)",
+                })
+              }
+              onMouseLeave={() => onNodeLeave?.()}
             />
 
             {/* tail → from XXX */}
@@ -247,8 +282,25 @@ function LSB_Normal_Raiser({
               energized={item.energized}
               energizedToday={item.energized_today}
               arrowType="tail"
-              label={fromDevice?.text}
+              showLabel={false} // ⭐ 同样不画 text
               onClick={onCableClick}
+              onMouseEnter={(e) =>
+                onNodeEnter?.(e, {
+                  ...item,
+                  tooltip: fromDevice?.text
+                    ? `from ${fromDevice.text}`
+                    : "from (unknown device)",
+                })
+              }
+              onMouseMove={(e) =>
+                onNodeMove?.(e, {
+                  ...item,
+                  tooltip: fromDevice?.text
+                    ? `from ${fromDevice.text}`
+                    : "from (unknown device)",
+                })
+              }
+              onMouseLeave={() => onNodeLeave?.()}
             />
           </React.Fragment>
         );
@@ -264,7 +316,30 @@ function LSB_Normal_Raiser({
       ))}
 
       <CableBridgesArc cables={cablesData} bgColor="#fff" radius={2} gap={4} />
-
+      {breakers.map((item) => (
+        <Breaker
+          key={item.id}
+          id={item.id}
+          x1={item.rect_px[0]}
+          y1={item.rect_px[1]}
+          x2={item.rect_px[2]}
+          y2={item.rect_px[3]}
+          state={item.energized ? "CLOSE" : "OPEN"}
+          onClick={() => onNodeClick?.(item)}
+        />
+      ))}
+      {busBreakers.map((item) => (
+        <BusBreaker
+          key={item.id}
+          id={item.id}
+          x1={item.rect_px[0]}
+          y1={item.rect_px[1]}
+          x2={item.rect_px[2]}
+          y2={item.rect_px[3]}
+          state={item.energized ? "CLOSE" : "OPEN"}
+          onClick={() => onNodeClick?.(item)}
+        />
+      ))}
       {Array.isArray(rect) && rect.length === 4 && (
         <>
           <defs>

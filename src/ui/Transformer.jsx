@@ -11,6 +11,7 @@
 import React from "react";
 import FlashIcon from "./FlashIcon";
 import PropTypes from "prop-types";
+import { COLOR_MAP } from "../utils/constans";
 
 function Transformer({
   x1,
@@ -20,6 +21,7 @@ function Transformer({
   stroke = "currentColor",
   strokeWidth = 5,
   energized = false,
+  energizedToday,
   name,
   ...rest
 }) {
@@ -27,20 +29,23 @@ function Transformer({
   const targetW = Math.max(0, x2 - x1);
   const targetH = Math.max(0, y2 - y1);
 
+  const getFillColor = () => {
+    if (energizedToday) return COLOR_MAP.orange500;
+    if (energized) return COLOR_MAP.red500;
+    return COLOR_MAP.gray50;
+  };
   // 原图的“基准包围盒”（根据现有元素的最外范围估算）
   // x: [20, 240] => width = 220
   // y: [16, 232] => height = 216 （顶帽 r=6 => 22-6=16；机脚 208+24=232）
   const BASE = { minX: 20, minY: 16, width: 220, height: 216 };
 
   // 统一缩放（等比），并把内容在目标矩形里居中
-  const s = Math.min(
-    targetW / BASE.width || 0,
-    targetH / BASE.height || 0
-  )*1.5;
+  const s =
+    Math.min(targetW / BASE.width || 0, targetH / BASE.height || 0) * 1.5;
   const drawW = BASE.width * s;
   const drawH = BASE.height * s;
   const offsetX = x1 + (targetW - drawW) / 2;
-  const offsetY = y1 + (targetH - drawH) / 2-15;
+  const offsetY = y1 + (targetH - drawH) / 2 - 15;
 
   /* 顶部 3 个套管 (bushings) 的中心 x 坐标（基于原图坐标系） */
   const bushingXs = [86, 130, 174];
@@ -49,12 +54,12 @@ function Transformer({
 
   return (
     <>
-    <rect
+      <rect
         x={x1}
         y={y1}
         width={targetW}
         height={targetH}
-        fill="white"
+        fill={"white"}
         fillOpacity="0"
         pointerEvents="all"
         style={{ cursor: "pointer" }}
@@ -63,63 +68,63 @@ function Transformer({
         onMouseEnter={rest.onMouseEnter}
         onMouseLeave={rest.onMouseLeave}
       />
-    <g
-      // 先把图形移动到目标矩形里（带居中），再按 s 等比缩放，
-      // 最后把原图坐标的 minX/minY 平移到 (0,0)，让左上角对齐
-      transform={`translate(${offsetX} ${offsetY}) scale(${s}) translate(${-BASE.minX} ${-BASE.minY})`}
-      stroke={stroke}
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      fill="none"
-      {...rest}
+      <g
+        // 先把图形移动到目标矩形里（带居中），再按 s 等比缩放，
+        // 最后把原图坐标的 minX/minY 平移到 (0,0)，让左上角对齐
+        transform={`translate(${offsetX} ${offsetY}) scale(${s}) translate(${-BASE.minX} ${-BASE.minY})`}
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+        {...rest}
       >
-      {energized && <FlashIcon x={40} y={50} />}
+        {energized && <FlashIcon x={40} y={50} />}
 
-      {/* ──────── 顶部横梁 ──────── */}
-      <rect x="48" y="78" width="164" height="10" rx="3" />
+        {/* ──────── 顶部横梁 ──────── */}
+        <rect x="48" y="78" width="164" height="10" rx="3" />
 
-      {/* ──────── 机体主箱 ──────── */}
-      <rect x="48" y="88" width="164" height="120" rx="10" />
+        {/* ──────── 机体主箱 ──────── */}
+        <rect x="48" y="88" width="164" height="120" rx="10" />
 
-      {/* ──────── 两侧散热片 ────── */}
-      <rect x="20" y="100" width="28" height="96" rx="6" />
-      <rect x="212" y="100" width="28" height="96" rx="6" />
+        {/* ──────── 两侧散热片 ────── */}
+        <rect x="20" y="100" width="28" height="96" rx="6" />
+        <rect x="212" y="100" width="28" height="96" rx="6" />
 
-      {/* ──────── 机脚 ─────────── */}
-      <rect x="72" y="208" width="40" height="24" rx="4" />
-      <rect x="148" y="208" width="40" height="24" rx="4" />
+        {/* ──────── 机脚 ─────────── */}
+        <rect x="72" y="208" width="40" height="24" rx="4" />
+        <rect x="148" y="208" width="40" height="24" rx="4" />
 
-      {/* ──────── 面板窗口 ─────── */}
-      <rect x="72" y="118" width="120" height="64" rx="6" />
+        {/* ──────── 面板窗口 ─────── */}
+        <rect x="72" y="118" width="120" height="64" rx="6" />
 
-      <text
-        x={130}
-        y={150}
-        textAnchor="middle"
-        fontSize="14"
-        fill="#333"
-        strokeWidth={1}
-        className="text-4xl"
+        <text
+          x={130}
+          y={150}
+          textAnchor="middle"
+          fontSize="14"
+          fill="#333"
+          strokeWidth={1}
+          className="text-4xl"
         >
-        {name}
-      </text>
+          {name}
+        </text>
 
-      {/* ──────── 三个高压套管 ── */}
-      {bushingXs.map((cx) => (
-        <g key={cx}>
-          {/* 小帽 */}
-          <circle cx={cx} cy={22} r={6} />
-          {/* 多层波纹 (用平行线模拟) */}
-          {bushingLines.map((y0) => (
-            <line key={y0} x1={cx - 14} y1={y0} x2={cx + 14} y2={y0} />
-          ))}
-          {/* 立柱 */}
-          <line x1={cx} y1={78} x2={cx} y2={74} />
-        </g>
-      ))}
-    </g>
-      </>
+        {/* ──────── 三个高压套管 ── */}
+        {bushingXs.map((cx) => (
+          <g key={cx}>
+            {/* 小帽 */}
+            <circle cx={cx} cy={22} r={6} />
+            {/* 多层波纹 (用平行线模拟) */}
+            {bushingLines.map((y0) => (
+              <line key={y0} x1={cx - 14} y1={y0} x2={cx + 14} y2={y0} />
+            ))}
+            {/* 立柱 */}
+            <line x1={cx} y1={78} x2={cx} y2={74} />
+          </g>
+        ))}
+      </g>
+    </>
   );
 }
 

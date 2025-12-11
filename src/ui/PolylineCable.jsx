@@ -65,6 +65,7 @@ function PolylineCable({
           markerWidth="8"
           markerHeight="8"
           orient="auto"
+          markerUnits="userSpaceOnUse"
         >
           <path d="M0,0 L10,5 L0,10 z" fill={strokeColor} />
         </marker>
@@ -78,6 +79,7 @@ function PolylineCable({
           markerWidth="8"
           markerHeight="8"
           orient="auto-start-reverse"
+          markerUnits="userSpaceOnUse"
         >
           <path d="M10,0 L0,5 L10,10 z" fill={strokeColor} />
         </marker>

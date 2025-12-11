@@ -4,5 +4,6 @@ const COLOR_MAP = {
   yellow300: "#fde047",
   red500: "#ef4444",
   orange500: "#f97316",
+  green500: "#22c55e",
 };
 export { PAGE_SIZE, COLOR_MAP };
