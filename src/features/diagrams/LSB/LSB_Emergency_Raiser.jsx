@@ -344,6 +344,15 @@ function LSB_Emergency_Raiser({
           energized={item.energized}
           energizedToday={item.energized_today}
           onClick={() => onNodeClick?.(item)}
+          onMouseMove={(e) =>
+            onNodeMove?.(e, {
+              ...item,
+              tooltip: `${item.text} • ${
+                item.energized ? "Energized" : "De-energized"
+              }`,
+            })
+          }
+          onMouseLeave={() => onNodeLeave?.()}
         />
       ))}
 
