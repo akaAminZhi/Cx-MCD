@@ -1,5 +1,12 @@
-// LSB_Diagrams.jsx（关键片段）
-import React, { useState, lazy, Suspense, useRef, useCallback } from "react";
+// src/pages/LSB_Diagrams.jsx
+import React, {
+  useState,
+  lazy,
+  Suspense,
+  useRef,
+  useCallback,
+  useEffect,
+} from "react";
 import Button from "../ui/Button";
 import PanZoomSVG from "../ui/PanZoomSVG";
 import Spinner from "../ui/Spinner";
@@ -25,8 +32,10 @@ const projectId = "lsb";
 export default function LSB_Diagrams() {
   const [active, setActive] = useState("Normal");
   const [selectedDevice, setSelectedDevice] = useState(null);
+
   return (
     <Modal>
+      {/* 顶部 Normal / Emergency 切换按钮 */}
       <div className="flex gap-x-2 mb-3">
         {DIAGRAMS.map((label) => (
           <Button
@@ -42,11 +51,12 @@ export default function LSB_Diagrams() {
 
       <div className="m-2">
         <Suspense fallback={<Spinner />}>
-          {/* 👇 真正工作区放在 Provider 里面，这里可以安全用 useModal */}
           <DiagramInner
             active={active}
             projectId={projectId}
             onSelectDevice={setSelectedDevice}
+            // ⭐ 传 setActive 给内层，用于搜索结果切换 Normal/Emergency
+            onChangeActive={setActive}
           />
         </Suspense>
       </div>
@@ -55,11 +65,10 @@ export default function LSB_Diagrams() {
       <Modal.Window name="device" size="xl">
         {({ closeModal }) => (
           <DeviceEditor
-            deviceKey="devices" // 可选：自定义
+            deviceKey="devices"
             projectId={projectId}
             closeModal={closeModal}
             device={selectedDevice}
-            // DeviceEditor 内部会从 React Query 或 props 拿选中设备（见下）
           />
         )}
       </Modal.Window>
@@ -67,22 +76,25 @@ export default function LSB_Diagrams() {
   );
 }
 
-/** 真正的图纸区（位于 Modal Provider 之下），可安全调用 useModal */
-function DiagramInner({ active, projectId, onSelectDevice }) {
-  const { open } = useModal(); // ✅ 现在这里有 Provider 了
-  const [highlightDeviceId, sethighlightDeviceId] = useState(null);
-  const [selectedDevice, setSelectedDevice] = useState(null);
+/** 真正的图纸区 */
+function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
+  const { open } = useModal();
 
-  // pan/zoom refs
+  const [highlightDeviceId, setHighlightDeviceId] = useState(null);
+  const [selectedDeviceLocal, setSelectedDeviceLocal] = useState(null);
+
+  // ⭐ 保存“待跨页聚焦”的信息（rect + id + page）
+  const [pendingFocus, setPendingFocus] = useState(null);
+
+  // pan/zoom refs & 状态（每个模式一套）
   const panZoomRefs = useRef({});
   const panZoomStateRefs = useRef({});
-  if (!panZoomRefs.current[active])
-    panZoomRefs.current[active] = React.createRef();
-  if (!panZoomStateRefs.current[active])
+  if (!panZoomStateRefs.current[active]) {
     panZoomStateRefs.current[active] = {
       scale: 0.3,
       translate: { x: 0, y: 0 },
     };
+  }
 
   // tooltip 容器
   const containerRef = useRef(null);
@@ -98,6 +110,7 @@ function DiagramInner({ active, projectId, onSelectDevice }) {
       text,
     });
   }, []);
+
   const moveTip = useCallback((e, text) => {
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -108,44 +121,82 @@ function DiagramInner({ active, projectId, onSelectDevice }) {
       text: text ?? prev.text,
     }));
   }, []);
+
   const hideTip = useCallback(() => setTip((t) => ({ ...t, show: false })), []);
 
-  // 搜索定位
+  // ⭐ 搜索结果点击：
+  //   - 同页：直接 zoom
+  //   - 跨页：记下 pendingFocus + 切 tab，等新页的 ref ready 后 zoom
   const handlePickDevice = useCallback(
     (item) => {
       const rect = item.rect_px;
       const id = item.id;
+      const page = item.file_page ?? item.page; // 1=Normal, 2=Emergency
+
       if (!rect || rect.length !== 4) return;
 
-      // 直接调用 PanZoomSVG 暴露的 API（之前给你加过 zoomToRect）
-      panZoomRefs.current[active]?.current?.zoomToRect(rect, {
-        padding: 60,
-        maxScale: 6,
-      });
+      const targetMode = page === 2 ? "Emergency" : "Normal";
 
-      sethighlightDeviceId(id);
-      setTimeout(() => sethighlightDeviceId(null), 2500);
+      // ✅ 当前页就能显示 → 直接 zoom
+      if (targetMode === active) {
+        const instance = panZoomRefs.current[active];
+        if (instance && typeof instance.zoomToRect === "function") {
+          instance.zoomToRect(rect, { padding: 60, maxScale: 6 });
+          setHighlightDeviceId(id);
+          setTimeout(() => setHighlightDeviceId(null), 2500);
+          return;
+        }
+      }
+
+      // ❗ 需要跨页：先记录任务，再切 tab，真正 zoom 放到 ref 回调里
+      setPendingFocus({ rect, id, page });
+      if (active !== targetMode) {
+        onChangeActive?.(targetMode);
+      }
     },
-    [active]
+    [active, onChangeActive]
+  );
+
+  // ⭐ 用 callback ref 来拿到 PanZoomSVG 实例
+  const attachPanZoomRef = useCallback(
+    (mode) => (node) => {
+      // mount / unmount 都会进来
+      panZoomRefs.current[mode] = node || null;
+
+      // 如果这个 mode 的实例刚刚 mount 且有待聚焦任务 → 在这里 zoom
+      if (node && pendingFocus && typeof node.zoomToRect === "function") {
+        const { rect, id, page } = pendingFocus;
+        const targetMode = page === 2 ? "Emergency" : "Normal";
+
+        if (
+          targetMode === mode &&
+          rect &&
+          Array.isArray(rect) &&
+          rect.length === 4
+        ) {
+          node.zoomToRect(rect, { padding: 60, maxScale: 6 });
+          setHighlightDeviceId(id);
+          setTimeout(() => setHighlightDeviceId(null), 2500);
+          setPendingFocus(null); // ✅ 任务完成，清掉
+        }
+      }
+    },
+    [pendingFocus]
   );
 
   // 点击任意设备 → 选中并打开 modal
   const onNodeClick = useCallback(
     (payload) => {
+      setSelectedDeviceLocal(payload);
       onSelectDevice?.(payload);
       queueMicrotask(() => open("device"));
-      // console.log(payload);
-      // open("device"); // ✅ 现在 open 一定有效
     },
     [open, onSelectDevice]
   );
 
   const { Component } = DIAGRAM_CONFIG[active];
-
-  const panZoomRef = panZoomRefs.current[active];
   const panZoomStateRef = panZoomStateRefs.current[active];
 
-  // ⭐ 关键：用 useMemo 固定传给 <Component> 的回调对象
   const diagramCallbacks = React.useMemo(
     () => ({
       onNodeEnter: (e, payload) =>
@@ -157,8 +208,10 @@ function DiagramInner({ active, projectId, onSelectDevice }) {
     }),
     [showTip, moveTip, hideTip, onNodeClick]
   );
+
   return (
     <div ref={containerRef} style={{ position: "relative", height: 800 }}>
+      {/* 搜索框浮层 */}
       <div className="absolute z-10 left-2 top-2 bg-white/85 backdrop-blur px-2 py-2 rounded shadow">
         <DeviceSearchBox
           project={projectId}
@@ -167,20 +220,21 @@ function DiagramInner({ active, projectId, onSelectDevice }) {
         />
       </div>
 
+      {/* 主图层 */}
       <PanZoomSVG
         key={active}
-        ref={panZoomRef}
+        ref={attachPanZoomRef(active)} // ⭐ callback ref
         stateRef={{ current: panZoomStateRef }}
         height="800px"
       >
-        {/* 把 highlightDeviceId 传给子图层绘制高亮 */}
         <Component
           {...diagramCallbacks}
           highlightDeviceId={highlightDeviceId}
-          selectedDevice={selectedDevice}
+          selectedDevice={selectedDeviceLocal}
         />
       </PanZoomSVG>
 
+      {/* tooltip */}
       {tip.show && (
         <div
           style={{
@@ -201,19 +255,6 @@ function DiagramInner({ active, projectId, onSelectDevice }) {
           {tip.text}
         </div>
       )}
-
-      {/* 把选中设备放到一个不可见的容器里，供 Modal.Window 里的 DeviceEditor 通过 props 或全局状态拿到也可以 */}
-      {/* 更简单：把 DeviceEditor 放这里，并通过函数子注入 closeModal（也可行）。这里保持上层 Window 渲染。 */}
-      <DeviceEditorHiddenBridge device={selectedDevice} projectId={projectId} />
     </div>
   );
-}
-
-/** 选中设备透传桥（可选方案）
- *  如果你希望 DeviceEditor 在 Modal.Window 里渲染，但又要拿到 selectedDevice，
- *  可以用全局 store（Zustand/Context）或简单起见：放到 React Query 的临时缓存里。
- *  这里示例简单起见，什么都不做。你也可以改成写到一个 context。
- */
-function DeviceEditorHiddenBridge() {
-  return null;
 }

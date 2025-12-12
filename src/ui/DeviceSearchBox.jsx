@@ -94,7 +94,12 @@ export default function DeviceSearchBox({
               >
                 <div className="font-medium">{it.text || it.name}</div>
                 <div className="text-xs text-gray-500">
-                  page: {it.page ?? it.file_page ?? "-"} · {it.type ?? "device"}
+                  {it.file_page === 1
+                    ? "Normal"
+                    : it.file_page === 2
+                      ? "Emergency"
+                      : "-"}{" "}
+                  · {it.type ?? "device"}
                 </div>
               </div>
             ))}

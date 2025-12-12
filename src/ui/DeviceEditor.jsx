@@ -5,17 +5,13 @@ import axios from "axios";
 import Button from "./Button";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { HiOutlinePencilSquare, HiOutlineCheck } from "react-icons/hi2"; // ⬅️ 图标
+import { HiOutlinePencilSquare, HiOutlineCheck } from "react-icons/hi2";
 
-/**
- * 设备编辑表单
- * props:
- *  - device: 当前选中的设备对象（包含 id, text/name, rect_px, comments, energized, energized_today, will_energized_at 等）
- *  - projectId: 项目标识
- *  - closeModal: Modal.Window 通过 cloneElement 注入的关闭函数
- */
+// ⭐ 已有 hooks
+import { useDeviceFiles } from "../hooks/useDeviceFiles";
+import { useUploadDeviceFile } from "../hooks/useUploadDeviceFile";
+
 export default function DeviceEditor({ device, projectId, closeModal }) {
-  // === 新增：name 编辑相关 state ===
   const [name, setName] = useState(device?.text || device?.name || "");
   const [isEditingName, setIsEditingName] = useState(false);
 
@@ -28,10 +24,16 @@ export default function DeviceEditor({ device, projectId, closeModal }) {
     device?.will_energized_at ? new Date(device.will_energized_at) : null
   );
 
-  // 当切换不同的 device 时，同步表单初值
+  // 选择的文件（还没上传）
+  const [selectedFile, setSelectedFile] = useState(null);
+  // 最近一次上传的文件（用来显示状态）
+  const [uploadingFile, setUploadingFile] = useState(null);
+  // file_type
+  const [fileType, setFileType] = useState("panel_schedule");
+
   useEffect(() => {
     setName(device?.text || device?.name || "");
-    setIsEditingName(false); // 切换设备时关闭编辑状态
+    setIsEditingName(false);
 
     setComments(device?.comments ?? "");
     setEnergized(!!device?.energized);
@@ -39,11 +41,15 @@ export default function DeviceEditor({ device, projectId, closeModal }) {
     setWillAt(
       device?.will_energized_at ? new Date(device.will_energized_at) : null
     );
+
+    setSelectedFile(null);
+    setUploadingFile(null);
+    setFileType("panel_schedule");
   }, [device]);
 
   const qc = useQueryClient();
 
-  // ⚠️ 请按你的后端路由调整：这里假设 PUT /api/v1/devices/:id
+  // ========= 更新设备信息 =========
   const mutation = useMutation({
     mutationFn: async ({ id, payload }) => {
       const url = `/api/v1/devices/${id}`;
@@ -51,12 +57,83 @@ export default function DeviceEditor({ device, projectId, closeModal }) {
       return res.data;
     },
     onSuccess: () => {
-      // 刷新设备列表 & 搜索缓存
       qc.invalidateQueries({ queryKey: ["devices", projectId] });
       qc.invalidateQueries({ queryKey: ["device-search"] });
       closeModal?.();
     },
   });
+
+  // ========= 文件列表 =========
+  const {
+    data: filesData,
+    isLoading: filesLoading,
+    isError: filesError,
+  } = useDeviceFiles(device?.id);
+
+  const files = filesData?.data || [];
+
+  // ========= 上传文件（点击 Upload 才上传） =========
+  const uploadMutation = useUploadDeviceFile();
+
+  function handleFileChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSelectedFile(file);
+    // 只选文件，不上传
+    e.target.value = "";
+  }
+
+  function handleClickUpload() {
+    if (!selectedFile || !device?.id) return;
+
+    setUploadingFile(selectedFile);
+
+    uploadMutation.mutate({
+      deviceId: device.id,
+      file: selectedFile,
+      fileType,
+    });
+
+    setSelectedFile(null);
+  }
+
+  // ========= 下载文件 =========
+  async function handleDownload(file) {
+    try {
+      const res = await axios.get(`/api/v1/files/${file.id}`, {
+        responseType: "blob",
+      });
+
+      const url = window.URL.createObjectURL(res.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = file.file_name || "file";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Download failed", err);
+      alert("Download failed");
+    }
+  }
+
+  // ========= 预览文件（图片 / PDF） =========
+  async function handlePreview(file) {
+    try {
+      const res = await axios.get(`/api/v1/files/${file.id}`, {
+        responseType: "blob",
+      });
+
+      const blobUrl = window.URL.createObjectURL(res.data);
+      window.open(blobUrl, "_blank", "noopener,noreferrer");
+      // 不要立刻 revoke，留给新窗口使用；可以做个 setTimeout 再回收
+      setTimeout(() => {
+        window.URL.revokeObjectURL(blobUrl);
+      }, 60 * 1000);
+    } catch (err) {
+      console.error("Preview failed", err);
+      alert("Preview failed");
+    }
+  }
 
   if (!device)
     return <div className="p-4 text-base text-gray-500">Loading device…</div>;
@@ -66,7 +143,7 @@ export default function DeviceEditor({ device, projectId, closeModal }) {
       <h3 className="text-2xl font-semibold">Device detail</h3>
 
       <div className="grid grid-cols-[20rem_1fr] gap-y-4 gap-x-8">
-        {/* === Name 行，增加图标 + 可编辑输入框 === */}
+        {/* === Name 行 === */}
         <div className="text-gray-600">Name</div>
         <div className="flex items-center gap-2 font-medium break-words">
           {isEditingName ? (
@@ -151,6 +228,131 @@ export default function DeviceEditor({ device, projectId, closeModal }) {
           onChange={(e) => setComments(e.target.value)}
           placeholder="Add comments…"
         />
+
+        {/* ============ Files 区 ============ */}
+        <div className="text-gray-600">Files</div>
+        <div className="space-y-4 text-base">
+          {/* 上传区域：选择文件 + Upload 按钮 */}
+          <div className="space-y-2">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div>
+                <div className="text-sm text-gray-600 mb-1">File type</div>
+                <select
+                  className="border rounded px-3 py-2 text-sm bg-white"
+                  value={fileType}
+                  onChange={(e) => setFileType(e.target.value)}
+                >
+                  <option value="panel_schedule">Panel schedule</option>
+                  <option value="test_report">Test report</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {/* 选择文件 */}
+                <input
+                  id="device-file-input"
+                  type="file"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                <label
+                  htmlFor="device-file-input"
+                  className="inline-flex items-center px-4 py-2 border rounded-md bg-white text-sm font-medium cursor-pointer hover:bg-gray-50"
+                >
+                  Choose file
+                </label>
+
+                {/* 点击上传 */}
+                <Button
+                  size="small"
+                  onClick={handleClickUpload}
+                  disabled={
+                    !selectedFile || uploadMutation.isPending || !device
+                  }
+                >
+                  {uploadMutation.isPending ? "Uploading..." : "Upload"}
+                </Button>
+
+                <span className="text-2xl text-gray-500">
+                  {selectedFile
+                    ? `Selected: ${selectedFile.name}`
+                    : uploadingFile
+                      ? `Last upload: ${uploadingFile.name}`
+                      : "No file selected"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 文件列表 */}
+          {filesLoading && (
+            <div className="text-sm text-gray-500">Loading files…</div>
+          )}
+          {filesError && (
+            <div className="text-sm text-red-500">Failed to load files.</div>
+          )}
+
+          {!filesLoading && files.length === 0 && (
+            <div className="text-sm text-gray-500">
+              No files uploaded for this device.
+            </div>
+          )}
+
+          {files.length > 0 && (
+            <div className="border rounded-md bg-white max-h-56 overflow-auto divide-y">
+              {files.map((file) => {
+                const canPreview =
+                  file.mime_type &&
+                  (file.mime_type.startsWith("image/") ||
+                    file.mime_type === "application/pdf");
+
+                return (
+                  <div
+                    key={file.id}
+                    className="flex items-center justify-between gap-3 px-3 py-2"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate text-2xl">
+                        {file.file_name}
+                      </div>
+                      <div className="text-2xl text-gray-500">
+                        {file.file_type || "other"} ·{" "}
+                        {file.file_size
+                          ? `${(file.file_size / 1024).toFixed(1)} KB`
+                          : ""}
+                        {file.created_at && (
+                          <>
+                            {" "}
+                            · {new Date(file.created_at).toLocaleDateString()}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {canPreview && (
+                        <Button
+                          variant="secondary"
+                          size="small"
+                          onClick={() => handlePreview(file)}
+                        >
+                          Preview
+                        </Button>
+                      )}
+                      <Button
+                        variant="secondary"
+                        size="small"
+                        onClick={() => handleDownload(file)}
+                      >
+                        Download
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex justify-end gap-3 pt-4">
@@ -163,8 +365,6 @@ export default function DeviceEditor({ device, projectId, closeModal }) {
               id: device.id,
               project: projectId,
               payload: {
-                // ⬅️ 这里把 name 一并传给后端
-                // 根据你后端字段名改：如果用 text 就换成 text: name
                 text: name,
                 comments,
                 energized,
