@@ -57,7 +57,8 @@ export default function DeviceEditor({ device, projectId, closeModal }) {
       return res.data;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["devices", projectId] });
+      qc.invalidateQueries({ queryKey: ["projectEquipments", projectId] });
+      qc.invalidateQueries({ queryKey: ["devices"] });
       qc.invalidateQueries({ queryKey: ["device-search"] });
       closeModal?.();
     },
