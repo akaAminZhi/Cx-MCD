@@ -1,10 +1,4 @@
-import {
-  HiMiniRectangleStack,
-  HiOutlineCog6Tooth,
-  HiOutlineHome,
-  HiOutlineUsers,
-  HiOutlineMap,
-} from "react-icons/hi2";
+import { HiOutlineHome, HiOutlineMap } from "react-icons/hi2";
 import { NavLink } from "react-router";
 
 function MainNav() {

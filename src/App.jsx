@@ -4,14 +4,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Toaster } from "react-hot-toast";
 
-import Homepage from "./pages/Homepage";
+import Dashboard from "./pages/Dashboard";
 import LSB_Diagrams from "./pages/LSB_Diagrams";
 
 import AppLayout from "./ui/AppLayout";
 import PageNotFound from "./pages/PageNotFound";
-
-
-
 
 const router = createBrowserRouter([
   {
@@ -19,14 +16,14 @@ const router = createBrowserRouter([
     path: "/",
     element: <AppLayout />, // 包含 <Outlet/>
     children: [
-      { path: "home", element: <Homepage /> },
+      { index: true, loader: () => redirect("/dashboard") },
+      { path: "dashboard", element: <Dashboard /> },
+      { path: "home", loader: () => redirect("/dashboard") },
       { path: "lsbdiagrams", element: <LSB_Diagrams /> },
-
 
       // 其他受保护页面...
     ],
   },
-
 
   { path: "*", element: <PageNotFound /> },
 ]);
