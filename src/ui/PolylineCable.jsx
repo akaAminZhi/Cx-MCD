@@ -65,7 +65,7 @@ function PolylineCable({
         <marker
           id={markerEndId}
           viewBox="0 0 10 10"
-          refX="10"
+          refX="5"
           refY="5"
           markerWidth="8"
           markerHeight="8"
