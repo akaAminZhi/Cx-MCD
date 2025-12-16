@@ -81,7 +81,11 @@ function DeviceDetail() {
   const { state } = useLocation();
   const stateDevice = state?.device;
 
-  const { data: device, isLoading, error } = useDevice(deviceId, {
+  const {
+    data: device,
+    isLoading,
+    error,
+  } = useDevice(deviceId, {
     initialData: stateDevice,
   });
 
@@ -129,13 +133,18 @@ function DeviceDetail() {
   const files = filesData?.data ?? [];
   const fileCount = filesData?.count ?? files.length;
 
-  const meta = useMemo(() => (device ? getFilePageMeta(device) : null), [device]);
+  const meta = useMemo(
+    () => (device ? getFilePageMeta(device) : null),
+    [device]
+  );
 
   if (isLoading || !device) return <Spinner />;
 
   if (error)
     return (
-      <div className="text-red-600 text-2xl p-10">Failed to load: {error.message}</div>
+      <div className="text-red-600 text-2xl p-10">
+        Failed to load: {error.message}
+      </div>
     );
 
   const updatedAgo = device.updated_at
@@ -222,7 +231,13 @@ function DeviceDetail() {
             </p>
 
             <div className="flex flex-wrap gap-3 pt-2">
-              {meta && <InfoPill icon={meta.icon} label={meta.label} tone={meta.tone} />}
+              {meta && (
+                <InfoPill
+                  icon={meta.icon}
+                  label={meta.label}
+                  tone={meta.tone}
+                />
+              )}
 
               <InfoPill
                 icon={
@@ -277,8 +292,12 @@ function DeviceDetail() {
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-emerald-50 to-white p-6 shadow-inner space-y-3">
-            <h3 className="text-xl font-semibold text-slate-800">Energization</h3>
-            <p className="text-lg text-slate-700">{device.comments || "No comments."}</p>
+            <h3 className="text-xl font-semibold text-slate-800">
+              Energization
+            </h3>
+            <p className="text-lg text-slate-700">
+              {device.comments || "No comments."}
+            </p>
             <p className="flex items-center gap-2 text-lg text-slate-700">
               <HiClock className="w-5 h-5 text-emerald-600" />
               {willAt
@@ -290,10 +309,12 @@ function DeviceDetail() {
           <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-amber-50 to-white p-6 shadow-inner space-y-3">
             <h3 className="text-xl font-semibold text-slate-800">Geometry</h3>
             <p className="text-lg text-slate-700">
-              Rect PX: {device.rect_px?.length ? device.rect_px.join(", ") : "-"}
+              Rect PX:{" "}
+              {device.rect_px?.length ? device.rect_px.join(", ") : "-"}
             </p>
             <p className="text-lg text-slate-700">
-              Segments: {device.short_segments_px ? "Provided" : "Not available"}
+              Segments:{" "}
+              {device.short_segments_px ? "Provided" : "Not available"}
             </p>
           </div>
         </div>
@@ -360,7 +381,9 @@ function DeviceDetail() {
               <DataRow label="Route">
                 <div className="flex flex-col gap-4 w-full">
                   <div className="flex items-center gap-3">
-                    <span className="text-sm uppercase text-slate-500">From</span>
+                    <span className="text-sm uppercase text-slate-500">
+                      From
+                    </span>
                     <input
                       value={fromLocation}
                       onChange={(e) => setFromLocation(e.target.value)}
@@ -389,7 +412,9 @@ function DeviceDetail() {
                     className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-lg focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200"
                   />
                   <span className="text-base text-slate-500">
-                    {device.will_energized_at ? `Currently ${willAtDisplay}` : "Not scheduled"}
+                    {device.will_energized_at
+                      ? `Currently ${willAtDisplay}`
+                      : "Not scheduled"}
                   </span>
                 </div>
               </DataRow>
@@ -434,15 +459,23 @@ function DeviceDetail() {
 
               <div className="flex items-center gap-3 text-lg text-slate-700 pt-2">
                 <HiCalendarDays className="w-5 h-5 text-indigo-500" />
-                <span>{willAt ? format(new Date(willAt), "MMM d, yyyy HH:mm") : "No schedule"}</span>
+                <span>
+                  {willAt
+                    ? format(new Date(willAt), "MMM d, yyyy HH:mm")
+                    : "No schedule"}
+                </span>
               </div>
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 space-y-3">
-              <h3 className="text-xl font-semibold text-slate-800">At a glance</h3>
+              <h3 className="text-xl font-semibold text-slate-800">
+                At a glance
+              </h3>
               <div className="flex items-center justify-between text-lg text-slate-700">
                 <span>Files</span>
-                <span className="font-semibold">{filesLoading ? "…" : fileCount}</span>
+                <span className="font-semibold">
+                  {filesLoading ? "…" : fileCount}
+                </span>
               </div>
               <div className="flex items-center justify-between text-lg text-slate-700">
                 <span>Created</span>
@@ -477,12 +510,14 @@ function DeviceDetail() {
         {filesLoading && <Spinner />}
 
         {!filesLoading && files.length === 0 && (
-          <div className="text-lg text-slate-600">No files uploaded for this device.</div>
+          <div className="text-lg text-slate-600">
+            No files uploaded for this device.
+          </div>
         )}
 
         {files.length > 0 && (
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-            <div className="grid grid-cols-[2fr_1fr_1fr_14rem] bg-slate-100 text-slate-700 text-lg font-semibold px-6 py-3">
+            <div className="grid grid-cols-[2fr_1fr_1fr_1fr] bg-slate-100 text-slate-700 text-lg font-semibold px-6 py-3">
               <span>File</span>
               <span>Type</span>
               <span>Uploaded</span>
@@ -492,7 +527,7 @@ function DeviceDetail() {
               {files.map((file) => (
                 <div
                   key={file.id}
-                  className="grid grid-cols-[2fr_1fr_1fr_14rem] items-center px-6 py-4 text-lg text-slate-800"
+                  className="grid grid-cols-[2fr_1fr_1fr_1fr] items-center px-6 py-4 text-lg text-slate-800"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <HiOutlineDocumentText className="w-6 h-6 text-indigo-600 shrink-0" />
@@ -515,14 +550,14 @@ function DeviceDetail() {
                         onClick={() => handlePreview(file)}
                         className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-base font-semibold text-slate-700 hover:bg-slate-50"
                       >
-                        <HiEye className="w-5 h-5" /> View
+                        <HiEye className="w-10 h-10" /> View
                       </button>
                     )}
                     <button
                       onClick={() => handleDownload(file)}
                       className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-base font-semibold text-white shadow hover:bg-indigo-700"
                     >
-                      <HiDocumentArrowDown className="w-5 h-5" /> Download
+                      <HiDocumentArrowDown className="w-10 h-10" /> Download
                     </button>
                   </div>
                 </div>
