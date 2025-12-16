@@ -28,13 +28,13 @@ function getFilePageMeta(device) {
   if (device.project === "lsb") {
     if (device.file_page === 1)
       return {
-        label: "Normal",
+        label: "Normal Power",
         tone: "bg-emerald-50 text-emerald-700 border-emerald-200",
         icon: <PiPlugsConnectedBold className="w-6 h-6" />,
       };
     if (device.file_page === 2)
       return {
-        label: "Emergency",
+        label: "Emergency Power",
         tone: "bg-rose-50 text-rose-700 border-rose-200",
         icon: <HiFire className="w-6 h-6" />,
       };

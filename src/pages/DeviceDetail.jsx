@@ -123,8 +123,20 @@ function DeviceDetail() {
       return res.data;
     },
     onSuccess: (updated) => {
-      qc.setQueryData(["device", deviceId], updated?.data || updated);
+      const data = updated?.data || updated;
+
+      // 1. 更新详情
+      qc.setQueryData(["device", deviceId], data);
+      const projectId = device?.project;
+      // 2. 让列表失效（返回 dashboard 时会拿到最新的）
+      if (projectId) {
+        qc.invalidateQueries({ queryKey: ["devices", projectId] });
+        qc.invalidateQueries({ queryKey: ["projectEquipments", projectId] });
+      }
+
+      // 3. 原来的文件列表
       qc.invalidateQueries({ queryKey: ["deviceFiles", deviceId] });
+
       toast.success("Device updated");
     },
     onError: () => toast.error("Failed to update device"),
