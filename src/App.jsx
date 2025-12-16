@@ -6,6 +6,7 @@ import { Toaster } from "react-hot-toast";
 
 import Dashboard from "./pages/Dashboard";
 import LSB_Diagrams from "./pages/LSB_Diagrams";
+import DeviceDetail from "./pages/DeviceDetail";
 
 import AppLayout from "./ui/AppLayout";
 import PageNotFound from "./pages/PageNotFound";
@@ -20,6 +21,7 @@ const router = createBrowserRouter([
       { path: "dashboard", element: <Dashboard /> },
       { path: "home", loader: () => redirect("/dashboard") },
       { path: "lsbdiagrams", element: <LSB_Diagrams /> },
+      { path: "devices/:deviceId", element: <DeviceDetail /> },
 
       // 其他受保护页面...
     ],
