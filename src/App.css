@@ -26,20 +26,21 @@
 }
 
 /* ======================================================
-   Lightning surge background for energized components
-   Only apply the `energized-surge` class when the
-   component truly represents energized state. The effect
-   renders a vivid blue lightning strike with a crackling
-   electric border while keeping content readable.
+   Hazard surge background for energized components
+   Applies a deep red energy wash with a molten glow
+   border to signal dangerous, energized state.
+   Use `energized-surge` only when a device is energized.
 */
 .energized-surge {
   position: relative;
   z-index: 0;
   overflow: hidden;
   isolation: isolate;
-  background: radial-gradient(circle at 18% 18%, rgba(59, 130, 246, 0.18), transparent 36%),
-    radial-gradient(circle at 82% 12%, rgba(56, 189, 248, 0.14), transparent 40%),
-    radial-gradient(circle at 50% 64%, rgba(37, 99, 235, 0.12), transparent 42%);
+  background:
+    radial-gradient(circle at 18% 22%, rgba(248, 113, 113, 0.18), transparent 34%),
+    radial-gradient(circle at 78% 12%, rgba(239, 68, 68, 0.14), transparent 36%),
+    radial-gradient(circle at 50% 70%, rgba(127, 29, 29, 0.12), transparent 42%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.3));
 }
 
 .energized-surge::before,
@@ -49,37 +50,41 @@
   pointer-events: none;
 }
 
-/* Primary lightning bolt that slices across the card */
+/* Moving red energy wash */
 .energized-surge::before {
-  inset: -32% 6% -12% 44%;
+  inset: -22%;
   background:
-    linear-gradient(110deg, transparent 47%, rgba(191, 219, 254, 0.95) 49%, rgba(224, 231, 255, 0.95) 51%, transparent 53%),
-    linear-gradient(110deg, transparent 46%, rgba(96, 165, 250, 0.92) 50%, transparent 54%),
-    linear-gradient(110deg, transparent 48%, rgba(59, 130, 246, 0.8) 50%, transparent 52%);
-  background-size: 220% 220%;
-  transform: rotate(-12deg);
-  filter: drop-shadow(0 0 16px rgba(191, 219, 254, 0.75)) drop-shadow(0 0 34px rgba(59, 130, 246, 0.5));
-  animation: lightningStrike 2.8s cubic-bezier(0.22, 0.68, 0.32, 1) infinite;
-  mix-blend-mode: screen;
-  opacity: 0.95;
+    conic-gradient(from 210deg,
+      rgba(248, 113, 113, 0.3),
+      rgba(248, 113, 113, 0.18) 22%,
+      rgba(244, 63, 94, 0.45) 32%,
+      rgba(190, 24, 93, 0.2) 46%,
+      rgba(248, 113, 113, 0.4) 60%,
+      rgba(248, 113, 113, 0.16) 74%,
+      rgba(127, 29, 29, 0.32) 88%,
+      rgba(248, 113, 113, 0.3));
+  filter: blur(18px) saturate(1.1);
+  animation: hazardPulse 4s linear infinite;
+  mix-blend-mode: multiply;
+  opacity: 0.9;
   z-index: -1;
 }
 
-/* Crackling electric border */
+/* Molten border glow */
 .energized-surge::after {
   inset: -10px;
   border-radius: inherit;
   background:
-    conic-gradient(from 90deg,
-      rgba(59, 130, 246, 0.7),
-      rgba(37, 99, 235, 0.15) 16%,
-      rgba(56, 189, 248, 0.8) 28%,
-      rgba(191, 219, 254, 0.14) 42%,
-      rgba(59, 130, 246, 0.75) 58%,
-      rgba(37, 99, 235, 0.16) 72%,
-      rgba(56, 189, 248, 0.82) 86%,
-      rgba(191, 219, 254, 0.2));
-  background-size: 160% 160%;
+    conic-gradient(from 160deg,
+      rgba(248, 113, 113, 0.9),
+      rgba(239, 68, 68, 0.4) 16%,
+      rgba(248, 113, 113, 0.85) 32%,
+      rgba(127, 29, 29, 0.3) 48%,
+      rgba(244, 63, 94, 0.88) 64%,
+      rgba(248, 113, 113, 0.46) 78%,
+      rgba(190, 24, 93, 0.34) 90%,
+      rgba(248, 113, 113, 0.9));
+  background-size: 140% 140%;
   mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
@@ -90,62 +95,54 @@
   -webkit-mask-composite: xor;
   padding: 10px;
   box-shadow:
-    0 0 24px rgba(59, 130, 246, 0.45),
-    0 0 42px rgba(56, 189, 248, 0.35),
-    inset 0 0 18px rgba(191, 219, 254, 0.25);
-  animation: electricBorder 2.6s linear infinite;
+    0 0 28px rgba(248, 113, 113, 0.45),
+    0 0 46px rgba(190, 24, 93, 0.35),
+    inset 0 0 18px rgba(239, 68, 68, 0.28);
+  animation: hazardBorder 2.8s ease-in-out infinite;
   mix-blend-mode: screen;
-  opacity: 0.96;
+  opacity: 0.92;
   z-index: -2;
 }
 
-@keyframes lightningStrike {
+@keyframes hazardPulse {
   0% {
-    background-position: 140% -40%;
-    opacity: 0;
-    filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.3));
+    transform: rotate(0deg) scale(1.02);
+    opacity: 0.78;
   }
-  10% {
-    background-position: 96% 12%;
-    opacity: 1;
+  25% {
+    transform: rotate(1deg) scale(1.04);
+    opacity: 0.96;
   }
-  22% {
-    background-position: 64% 62%;
-    opacity: 0.5;
+  50% {
+    transform: rotate(-1.4deg) scale(1.03);
+    opacity: 0.84;
   }
-  38% {
-    background-position: 18% 120%;
-    opacity: 0.95;
-  }
-  54% {
-    opacity: 0.4;
+  75% {
+    transform: rotate(1.2deg) scale(1.045);
+    opacity: 0.98;
   }
   100% {
-    background-position: -60% 180%;
-    opacity: 0;
+    transform: rotate(0deg) scale(1.02);
+    opacity: 0.78;
   }
 }
 
-@keyframes electricBorder {
+@keyframes hazardBorder {
   0% {
     transform: rotate(0deg) scale(1.01);
-    opacity: 0.78;
+    filter: hue-rotate(0deg) brightness(1);
   }
-  28% {
-    transform: rotate(1.5deg) scale(1.018);
-    opacity: 0.96;
+  40% {
+    transform: rotate(-0.6deg) scale(1.018);
+    filter: hue-rotate(-4deg) brightness(1.05);
   }
-  52% {
-    transform: rotate(-1.2deg) scale(1.012);
-    opacity: 0.82;
-  }
-  76% {
-    transform: rotate(1deg) scale(1.022);
-    opacity: 0.94;
+  70% {
+    transform: rotate(0.9deg) scale(1.022);
+    filter: hue-rotate(3deg) brightness(1.08);
   }
   100% {
     transform: rotate(0deg) scale(1.01);
-    opacity: 0.84;
+    filter: hue-rotate(0deg) brightness(1);
   }
 }
 @layer components {
