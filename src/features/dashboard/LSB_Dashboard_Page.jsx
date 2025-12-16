@@ -89,20 +89,28 @@ function DeviceCard({ device }) {
 
   const fileCount = filesError ? "?" : (filesData?.count ?? 0);
 
+  const baseCardClasses = `
+    group relative border rounded-2xl bg-white p-6 shadow-sm flex flex-col gap-5 overflow-hidden
+    transition-all duration-200 ease-out cursor-pointer
+    hover:-translate-y-1 hover:shadow-xl
+    focus-within:-translate-y-1 focus-within:shadow-xl
+  `;
+
+  const energizedTone = device.energized
+    ? "energized-surge border-rose-300 hover:border-rose-400 focus-within:border-rose-500 hover:bg-rose-50/50"
+    : "hover:border-indigo-300 focus-within:border-indigo-400 hover:bg-indigo-50/40";
+
+  const accentBar = device.energized
+    ? "bg-rose-500/90 shadow-[0_0_12px_rgba(248,113,113,0.85)]"
+    : "bg-indigo-400/80";
+
   return (
-    <article
-      className="
-        group relative border rounded-2xl bg-white p-6 shadow-sm flex flex-col gap-5 
-        transition-all duration-200 ease-out cursor-pointer
-        hover:-translate-y-1 hover:shadow-xl hover:border-indigo-300 hover:bg-indigo-50/40
-        focus-within:-translate-y-1 focus-within:shadow-xl focus-within:border-indigo-400
-      "
-    >
+    <article className={`${baseCardClasses.trim()} ${energizedTone}`.trim()}>
       <span
-        className="
-          absolute inset-y-4 left-0 w-1 bg-indigo-400/80 rounded-r-2xl opacity-0
-          group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity 
-        "
+        className={`
+          absolute inset-y-4 left-0 w-1 rounded-r-2xl opacity-0
+          group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity ${accentBar}
+        `}
       />
 
       <header className="flex justify-between gap-4">
@@ -129,7 +137,7 @@ function DeviceCard({ device }) {
           <span
             className={`inline-flex items-center gap-2 text-base px-3 py-1.5 rounded-full border ${
               device.energized
-                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                ? "bg-rose-50 text-rose-700 border-rose-200"
                 : "bg-amber-50 text-amber-700 border-amber-200"
             }`}
           >

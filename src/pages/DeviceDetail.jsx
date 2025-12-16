@@ -220,7 +220,13 @@ function DeviceDetail() {
       </div>
 
       {/* Header */}
-      <div className="rounded-3xl border border-indigo-100 bg-white shadow-lg p-10 space-y-6">
+      <div
+        className={`rounded-3xl border bg-white shadow-lg p-10 space-y-6 overflow-hidden relative ${
+          device.energized
+            ? "energized-surge border-rose-300"
+            : "border-indigo-100"
+        }`}
+      >
         <div className="flex flex-wrap justify-between gap-6 items-start">
           <div className="space-y-2">
             <Heading Tag="h1" className="text-4xl font-bold text-slate-900">
@@ -250,7 +256,7 @@ function DeviceDetail() {
                 label={device.energized ? "Energized" : "Not energized"}
                 tone={
                   device.energized
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    ? "bg-rose-50 text-rose-700 border-rose-200"
                     : "bg-amber-50 text-amber-700 border-amber-200"
                 }
               />
