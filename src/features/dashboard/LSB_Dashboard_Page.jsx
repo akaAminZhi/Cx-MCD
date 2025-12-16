@@ -11,6 +11,7 @@ import {
   HiOutlineMapPin,
 } from "react-icons/hi2";
 import { format, formatDistanceToNow, isAfter, subHours } from "date-fns";
+import { useNavigate } from "react-router";
 import Heading from "../../ui/Heading";
 import { useProjectEquipments } from "../../hooks/useProjectEquipments";
 import Spinner from "../../ui/Spinner";
@@ -203,7 +204,7 @@ function LSB_Dashboard_Page() {
   //   const { open } = useModal();
   const projectId = "lsb";
 
-  const [activeDevice, setActiveDevice] = useState(null);
+  const navigate = useNavigate();
 
   const { data, isLoading, error } = useProjectEquipments(projectId);
   const Equipement = data?.data ?? [];
@@ -433,8 +434,7 @@ function LSB_Dashboard_Page() {
             key={device.id}
             className="text-left"
             onClick={() => {
-              setActiveDevice(device);
-              //   open("device-editor");
+              navigate(`/devices/${device.id}`, { state: { device } });
             }}
           >
             <DeviceCard device={device} />
