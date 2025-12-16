@@ -8,11 +8,16 @@ import {
   HiOutlineMapPin,
   HiMiniArrowTrendingUp,
   HiDocumentArrowDown,
+  HiEye,
+  HiArrowPath,
 } from "react-icons/hi2";
 import { PiPlugsConnectedBold } from "react-icons/pi";
 import { format, formatDistanceToNow } from "date-fns";
 import { useLocation, useNavigate, useParams } from "react-router";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import toast from "react-hot-toast";
 import useDevice from "../hooks/useDevice";
 import { useDeviceFiles } from "../hooks/useDeviceFiles";
 import Spinner from "../ui/Spinner";
@@ -53,13 +58,21 @@ function InfoPill({ icon, label, tone }) {
 
 function DataRow({ label, children }) {
   return (
-    <div className="grid grid-cols-[18rem_1fr] gap-6 items-start py-3">
+    <div className="space-y-2">
       <div className="text-slate-500 text-lg font-semibold">{label}</div>
       <div className="text-xl text-slate-900 flex flex-wrap gap-3 items-center">
         {children}
       </div>
     </div>
   );
+}
+
+function formatDateTimeLocal(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  // Align to local timezone for input[type=datetime-local]
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
 }
 
 function DeviceDetail() {
@@ -77,6 +90,41 @@ function DeviceDetail() {
     isLoading: filesLoading,
     error: filesError,
   } = useDeviceFiles(deviceId);
+
+  const [text, setText] = useState("");
+  const [subject, setSubject] = useState("");
+  const [comments, setComments] = useState("");
+  const [willAt, setWillAt] = useState("");
+  const [energized, setEnergized] = useState(false);
+  const [energizedToday, setEnergizedToday] = useState(false);
+  const [fromLocation, setFromLocation] = useState("");
+  const [toLocation, setToLocation] = useState("");
+
+  useEffect(() => {
+    if (!device) return;
+    setText(device.text || "");
+    setSubject(device.subject || "");
+    setComments(device.comments || "");
+    setWillAt(formatDateTimeLocal(device.will_energized_at));
+    setEnergized(!!device.energized);
+    setEnergizedToday(!!device.energized_today);
+    setFromLocation(device.from || device.computed_from || "");
+    setToLocation(device.to || device.computed_to || "");
+  }, [device]);
+
+  const qc = useQueryClient();
+  const updateMutation = useMutation({
+    mutationFn: async (payload) => {
+      const res = await axios.put(`/api/v1/devices/${deviceId}`, payload);
+      return res.data;
+    },
+    onSuccess: (updated) => {
+      qc.setQueryData(["device", deviceId], updated?.data || updated);
+      qc.invalidateQueries({ queryKey: ["deviceFiles", deviceId] });
+      toast.success("Device updated");
+    },
+    onError: () => toast.error("Failed to update device"),
+  });
 
   const files = filesData?.data ?? [];
   const fileCount = filesData?.count ?? files.length;
@@ -98,9 +146,51 @@ function DeviceDetail() {
     ? format(new Date(device.created_at), "MMM d, yyyy HH:mm")
     : "-";
 
-  const willAt = device.will_energized_at
+  const willAtDisplay = device.will_energized_at
     ? format(new Date(device.will_energized_at), "MMM d, yyyy HH:mm")
     : "Not scheduled";
+
+  const handleSave = () => {
+    updateMutation.mutate({
+      text,
+      subject,
+      comments,
+      energized,
+      energized_today: energized ? false : energizedToday,
+      will_energized_at: willAt ? new Date(willAt).toISOString() : null,
+      from: fromLocation,
+      to: toLocation,
+    });
+  };
+
+  const handleDownload = async (file) => {
+    try {
+      const res = await axios.get(`/api/v1/files/${file.id}`, {
+        responseType: "blob",
+      });
+      const blobUrl = window.URL.createObjectURL(res.data);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = file.file_name || "download";
+      a.click();
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
+    } catch {
+      toast.error("Download failed");
+    }
+  };
+
+  const handlePreview = async (file) => {
+    try {
+      const res = await axios.get(`/api/v1/files/${file.id}`, {
+        responseType: "blob",
+      });
+      const blobUrl = window.URL.createObjectURL(res.data);
+      window.open(blobUrl, "_blank");
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
+    } catch {
+      toast.error("Preview failed");
+    }
+  };
 
   return (
     <div className="space-y-10 text-lg pb-20">
@@ -190,7 +280,10 @@ function DeviceDetail() {
             <h3 className="text-xl font-semibold text-slate-800">Energization</h3>
             <p className="text-lg text-slate-700">{device.comments || "No comments."}</p>
             <p className="flex items-center gap-2 text-lg text-slate-700">
-              <HiClock className="w-5 h-5 text-emerald-600" /> {willAt}
+              <HiClock className="w-5 h-5 text-emerald-600" />
+              {willAt
+                ? format(new Date(willAt), "MMM d, yyyy HH:mm")
+                : willAtDisplay}
             </p>
           </div>
 
@@ -207,43 +300,162 @@ function DeviceDetail() {
       </div>
 
       {/* Details grid */}
-      <div className="rounded-3xl border border-slate-200 bg-white shadow-sm p-10 space-y-6">
-        <Heading Tag="h2" className="text-3xl font-semibold text-slate-900">
-          Key details
-        </Heading>
+      <div className="rounded-3xl border border-slate-200 bg-white shadow-sm p-10 space-y-8">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <Heading Tag="h2" className="text-3xl font-semibold text-slate-900">
+            Key details
+          </Heading>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={updateMutation.isPending}
+            className="inline-flex items-center gap-3 rounded-2xl bg-indigo-600 text-white px-6 py-3 text-xl font-semibold shadow-lg hover:bg-indigo-700 disabled:opacity-60"
+          >
+            <HiArrowPath className="w-6 h-6" />
+            {updateMutation.isPending ? "Saving…" : "Save changes"}
+          </button>
+        </div>
 
-        <div className="divide-y divide-slate-100">
-          <DataRow label="Project / Page">
-            <InfoPill
-              icon={<HiOutlineDocumentText className="w-6 h-6" />}
-              label={`${device.project || "-"} · Page ${device.file_page}`}
-              tone="bg-slate-50 text-slate-800 border-slate-200"
-            />
-          </DataRow>
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
+          <div className="xl:col-span-2 space-y-8">
+            <div className="grid gap-6 md:grid-cols-2">
+              <DataRow label="Project / Page">
+                <InfoPill
+                  icon={<HiOutlineDocumentText className="w-6 h-6" />}
+                  label={`${device.project || "-"} · Page ${device.file_page}`}
+                  tone="bg-slate-50 text-slate-800 border-slate-200"
+                />
+              </DataRow>
 
-          <DataRow label="Text">
-            <span className="text-xl font-semibold text-slate-900">
-              {device.text || "-"}
-            </span>
-          </DataRow>
+              <DataRow label="Identifier">
+                <InfoPill
+                  icon={<HiOutlineMapPin className="w-6 h-6" />}
+                  label={device.id}
+                  tone="bg-white text-slate-900 border-slate-200 shadow-sm"
+                />
+              </DataRow>
+            </div>
 
-          <DataRow label="Subject">
-            <span className="text-xl text-slate-800">{device.subject || "-"}</span>
-          </DataRow>
+            <div className="grid gap-6 md:grid-cols-2">
+              <DataRow label="Text">
+                <input
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xl focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200"
+                  placeholder="Enter display text"
+                />
+              </DataRow>
 
-          <DataRow label="Schedule">
-            <InfoPill
-              icon={<HiCalendarDays className="w-6 h-6" />}
-              label={willAt}
-              tone="bg-indigo-50 text-indigo-800 border-indigo-200"
-            />
-          </DataRow>
+              <DataRow label="Subject">
+                <input
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xl focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200"
+                  placeholder="Enter subject"
+                />
+              </DataRow>
+            </div>
 
-          <DataRow label="Comments">
-            <span className="text-lg leading-relaxed text-slate-700">
-              {device.comments || "No comments yet."}
-            </span>
-          </DataRow>
+            <div className="grid gap-6 md:grid-cols-2">
+              <DataRow label="Route">
+                <div className="flex flex-col gap-4 w-full">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm uppercase text-slate-500">From</span>
+                    <input
+                      value={fromLocation}
+                      onChange={(e) => setFromLocation(e.target.value)}
+                      className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-lg focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                      placeholder="Origin"
+                    />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm uppercase text-slate-500">To</span>
+                    <input
+                      value={toLocation}
+                      onChange={(e) => setToLocation(e.target.value)}
+                      className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-lg focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                      placeholder="Destination"
+                    />
+                  </div>
+                </div>
+              </DataRow>
+
+              <DataRow label="Schedule">
+                <div className="flex flex-col gap-3">
+                  <input
+                    type="datetime-local"
+                    value={willAt}
+                    onChange={(e) => setWillAt(e.target.value)}
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-lg focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200"
+                  />
+                  <span className="text-base text-slate-500">
+                    {device.will_energized_at ? `Currently ${willAtDisplay}` : "Not scheduled"}
+                  </span>
+                </div>
+              </DataRow>
+            </div>
+
+            <DataRow label="Comments">
+              <textarea
+                value={comments}
+                onChange={(e) => setComments(e.target.value)}
+                rows={4}
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-lg leading-relaxed focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200"
+                placeholder="Add context for this device"
+              />
+            </DataRow>
+          </div>
+
+          <div className="space-y-5">
+            <div className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-6 shadow-inner space-y-4">
+              <h3 className="text-xl font-semibold text-slate-800">Status</h3>
+              <label className="flex items-center gap-4 text-lg">
+                <input
+                  type="checkbox"
+                  checked={energized}
+                  onChange={(e) => setEnergized(e.target.checked)}
+                  className="h-6 w-6 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="font-semibold text-slate-800">
+                  {energized ? "Energized" : "Not energized"}
+                </span>
+              </label>
+
+              <label className="flex items-center gap-4 text-lg">
+                <input
+                  type="checkbox"
+                  checked={energizedToday}
+                  disabled={energized}
+                  onChange={(e) => setEnergizedToday(e.target.checked)}
+                  className="h-6 w-6 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50"
+                />
+                <span className="text-slate-700">Active today</span>
+              </label>
+
+              <div className="flex items-center gap-3 text-lg text-slate-700 pt-2">
+                <HiCalendarDays className="w-5 h-5 text-indigo-500" />
+                <span>{willAt ? format(new Date(willAt), "MMM d, yyyy HH:mm") : "No schedule"}</span>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 space-y-3">
+              <h3 className="text-xl font-semibold text-slate-800">At a glance</h3>
+              <div className="flex items-center justify-between text-lg text-slate-700">
+                <span>Files</span>
+                <span className="font-semibold">{filesLoading ? "…" : fileCount}</span>
+              </div>
+              <div className="flex items-center justify-between text-lg text-slate-700">
+                <span>Created</span>
+                <span>{createdAt}</span>
+              </div>
+              {updatedAgo && (
+                <div className="flex items-center justify-between text-lg text-slate-700">
+                  <span>Updated</span>
+                  <span>{updatedAgo}</span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -270,17 +482,17 @@ function DeviceDetail() {
 
         {files.length > 0 && (
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-            <div className="grid grid-cols-[2fr_1fr_1fr_10rem] bg-slate-100 text-slate-700 text-lg font-semibold px-6 py-3">
+            <div className="grid grid-cols-[2fr_1fr_1fr_14rem] bg-slate-100 text-slate-700 text-lg font-semibold px-6 py-3">
               <span>File</span>
               <span>Type</span>
               <span>Uploaded</span>
-              <span className="text-right pr-2">Size</span>
+              <span className="text-right pr-2">Actions</span>
             </div>
             <div className="divide-y divide-slate-200 bg-white">
               {files.map((file) => (
                 <div
                   key={file.id}
-                  className="grid grid-cols-[2fr_1fr_1fr_10rem] items-center px-6 py-4 text-lg text-slate-800"
+                  className="grid grid-cols-[2fr_1fr_1fr_14rem] items-center px-6 py-4 text-lg text-slate-800"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <HiOutlineDocumentText className="w-6 h-6 text-indigo-600 shrink-0" />
@@ -296,17 +508,23 @@ function DeviceDetail() {
                       ? format(new Date(file.created_at), "MMM d, yyyy")
                       : "-"}
                   </span>
-                  <span className="text-right flex items-center justify-end gap-3">
-                    <span className="text-slate-700">
-                      {file.file_size ? `${(file.file_size / 1024).toFixed(1)} KB` : "-"}
-                    </span>
-                    <a
-                      className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-base inline-flex items-center gap-2 hover:bg-indigo-700"
-                      href={`/api/v1/files/${file.id}`}
+                  <div className="text-right flex items-center justify-end gap-3">
+                    {(file.mime_type?.startsWith("image/") ||
+                      file.mime_type === "application/pdf") && (
+                      <button
+                        onClick={() => handlePreview(file)}
+                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-base font-semibold text-slate-700 hover:bg-slate-50"
+                      >
+                        <HiEye className="w-5 h-5" /> View
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDownload(file)}
+                      className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-base font-semibold text-white shadow hover:bg-indigo-700"
                     >
                       <HiDocumentArrowDown className="w-5 h-5" /> Download
-                    </a>
-                  </span>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
