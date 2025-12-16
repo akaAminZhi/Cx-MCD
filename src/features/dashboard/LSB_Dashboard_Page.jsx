@@ -17,7 +17,6 @@ import { useProjectEquipments } from "../../hooks/useProjectEquipments";
 import Spinner from "../../ui/Spinner";
 import { useDeviceFiles } from "../../hooks/useDeviceFiles";
 // import Modal, { useModal } from "../../ui/Modal";
-import DeviceEditor from "../../ui/DeviceEditor";
 
 // ======================================================
 // 🔧 Unified Typography Scale
@@ -58,10 +57,12 @@ function SummaryCard({ title, value, icon, tone }) {
         {icon}
       </div>
       <div>
-        <p className="text-slate-500 text-base uppercase tracking-[0.15em]">
+        {/* text-base -> text-lg */}
+        <p className="text-slate-500 text-lg uppercase tracking-[0.15em]">
           {title}
         </p>
-        <p className="text-4xl font-semibold text-slate-900 mt-1">{value}</p>
+        {/* text-4xl -> text-5xl */}
+        <p className="text-5xl font-semibold text-slate-900 mt-1">{value}</p>
       </div>
     </div>
   );
@@ -115,27 +116,32 @@ function DeviceCard({ device }) {
 
       <header className="flex justify-between gap-4">
         <div>
-          <p className="text-sm uppercase text-slate-400 tracking-wide">
+          {/* text-sm -> text-base */}
+          <p className="text-base uppercase text-slate-400 tracking-wide">
             {device.project}
           </p>
-          <h3 className="text-2xl font-semibold text-slate-900 mt-1">
+          {/* text-2xl -> text-3xl */}
+          <h3 className="text-3xl font-semibold text-slate-900 mt-1">
             {device.text}
           </h3>
-          <p className="text-base text-slate-600 mt-1 line-clamp-2">
+          {/* text-base -> text-lg */}
+          <p className="text-lg text-slate-600 mt-1 line-clamp-2">
             {device.subject}
           </p>
         </div>
 
         <div className="flex flex-col items-end gap-2.5">
+          {/* text-base -> text-lg */}
           <span
-            className={`inline-flex items-center gap-2 text-base border px-3 py-1.5 rounded-full ${meta.tone}`}
+            className={`inline-flex items-center gap-2 text-lg border px-3 py-1.5 rounded-full ${meta.tone}`}
           >
             {meta.icon}
             {meta.label}
           </span>
 
+          {/* text-base -> text-lg */}
           <span
-            className={`inline-flex items-center gap-2 text-base px-3 py-1.5 rounded-full border ${
+            className={`inline-flex items-center gap-2 text-lg px-3 py-1.5 rounded-full border ${
               device.energized
                 ? "bg-rose-50 text-rose-700 border-rose-200"
                 : "bg-amber-50 text-amber-700 border-amber-200"
@@ -150,15 +156,17 @@ function DeviceCard({ device }) {
             {device.energized ? "Energized" : "Not energized"}
           </span>
 
+          {/* text-sm -> text-base */}
           {device.energized_today && (
-            <span className="text-sm bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-2 py-1 inline-flex items-center gap-1">
+            <span className="text-base bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-2 py-1 inline-flex items-center gap-1">
               <HiMiniArrowTrendingUp className="w-4 h-4" /> Today active
             </span>
           )}
         </div>
       </header>
 
-      <div className="grid grid-cols-2 gap-3 text-base text-slate-700">
+      {/* text-base -> text-lg */}
+      <div className="grid grid-cols-2 gap-3 text-lg text-slate-700">
         <div className="flex items-center gap-2">
           <HiOutlineMapPin className="w-5 h-5 text-indigo-500" />
           <span className="font-medium truncate">{device.id}</span>
@@ -182,7 +190,8 @@ function DeviceCard({ device }) {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 text-sm text-slate-600">
+      {/* text-sm -> text-base */}
+      <div className="flex flex-wrap gap-2 text-base text-slate-600">
         <span className="px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-full">
           Updated {updatedAgo}
         </span>
@@ -276,7 +285,8 @@ function LSB_Dashboard_Page() {
 
   if (error)
     return (
-      <div className="text-red-600 text-xl p-10">
+      // text-xl -> text-2xl
+      <div className="text-red-600 text-2xl p-10">
         Failed to load: {error.message}
       </div>
     );
@@ -285,10 +295,12 @@ function LSB_Dashboard_Page() {
   // MAIN RENDER
   // ==================================================
   return (
-    <div className="flex flex-col gap-10 text-lg pb-16">
+    // text-lg -> text-xl（整体再加一点）
+    <div className="flex flex-col gap-10 text-xl pb-16">
       {/* Page Title */}
       <header>
-        <Heading Tag="h1" className="text-4xl font-bold text-slate-900">
+        {/* text-4xl -> text-5xl */}
+        <Heading Tag="h1" className="text-5xl font-bold text-slate-900">
           Device Dashboard
         </Heading>
       </header>
@@ -350,7 +362,7 @@ function LSB_Dashboard_Page() {
                 }}
                 placeholder="Search by ID / subject / text"
                 className="
-                  pl-14 pr-4 py-3 border rounded-xl text-lg w-80
+                  pl-14 pr-4 py-3 border rounded-xl text-xl w-80
                   focus:outline focus:outline-2 focus:outline-indigo-500
                 "
               />
@@ -364,7 +376,7 @@ function LSB_Dashboard_Page() {
                 setPage(1);
               }}
               className="
-                border rounded-xl px-4 py-2 text-lg
+                border rounded-xl px-4 py-2 text-xl
                 focus:outline focus:outline-2 focus:outline-indigo-500
               "
             >
@@ -381,7 +393,7 @@ function LSB_Dashboard_Page() {
                 setPage(1);
               }}
               className="
-                border rounded-xl px-4 py-2 text-lg
+                border rounded-xl px-4 py-2 text-xl
                 focus:outline focus:outline-2 focus:outline-indigo-500
               "
             >
@@ -392,7 +404,8 @@ function LSB_Dashboard_Page() {
           </div>
 
           {/* HINT CHIPS */}
-          <div className="flex flex-wrap gap-3 text-sm">
+          {/* text-sm -> text-base */}
+          <div className="flex flex-wrap gap-3 text-base">
             <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
               LSB Page 1 → Normal
             </span>
@@ -406,14 +419,15 @@ function LSB_Dashboard_Page() {
         </div>
 
         {/* PAGINATION */}
-        <div className="flex items-center justify-between text-lg text-slate-600">
+        {/* text-lg -> text-xl */}
+        <div className="flex items-center justify-between text-xl text-slate-600">
           <p>
             Showing{" "}
             <strong className="text-slate-900">{pagedDevices.length}</strong> of{" "}
             {totalCount} matched devices (project total {summary.total})
           </p>
 
-          <div className="flex gap-3 text-lg font-semibold">
+          <div className="flex gap-3 text-xl font-semibold">
             <button
               className="px-4 py-2 rounded-xl border border-slate-300 disabled:opacity-40"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -450,7 +464,8 @@ function LSB_Dashboard_Page() {
         ))}
 
         {pagedDevices.length === 0 && (
-          <div className="border border-dashed border-slate-300 rounded-2xl p-16 text-center text-slate-500 bg-white text-xl">
+          // text-xl -> text-2xl
+          <div className="border border-dashed border-slate-300 rounded-2xl p-16 text-center text-slate-500 bg-white text-2xl">
             No devices match current filters.
           </div>
         )}
