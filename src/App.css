@@ -24,6 +24,94 @@
     outline-color: #4f46e5;
   }
 }
+
+/* ======================================================
+   Electric surge background for energized components
+   Creates layered lightning strokes that animate in the
+   background without blocking content. Apply the
+   `energized-surge` class to any card/container. */
+.energized-surge {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: radial-gradient(circle at 20% 20%, rgba(79, 70, 229, 0.08), transparent 35%),
+    radial-gradient(circle at 80% 0%, rgba(14, 165, 233, 0.08), transparent 30%);
+}
+
+.energized-surge::before,
+.energized-surge::after {
+  content: "";
+  position: absolute;
+  inset: -30%;
+  pointer-events: none;
+  z-index: -1;
+  mix-blend-mode: screen;
+}
+
+.energized-surge::before {
+  background: repeating-linear-gradient(
+      115deg,
+      rgba(79, 70, 229, 0.28) 0%,
+      rgba(59, 130, 246, 0.2) 8%,
+      transparent 14%,
+      transparent 22%
+    ),
+    repeating-linear-gradient(
+      -115deg,
+      rgba(244, 114, 182, 0.25) 0%,
+      rgba(124, 58, 237, 0.18) 6%,
+      transparent 12%,
+      transparent 20%
+    );
+  background-size: 140% 140%, 160% 160%;
+  filter: drop-shadow(0 0 12px rgba(79, 70, 229, 0.35));
+  animation: energizedFlow 8s linear infinite;
+  opacity: 0.55;
+}
+
+.energized-surge::after {
+  inset: -20%;
+  background: linear-gradient(
+    120deg,
+    transparent 10%,
+    rgba(255, 255, 255, 0.4) 35%,
+    rgba(94, 234, 212, 0.35) 50%,
+    transparent 70%
+  );
+  animation: energizedFlash 3.5s ease-in-out infinite;
+  opacity: 0.45;
+}
+
+@keyframes energizedFlow {
+  0% {
+    background-position: 0% 0%, 100% 0%;
+  }
+  50% {
+    background-position: 50% 50%, 40% 60%;
+  }
+  100% {
+    background-position: 120% 110%, -20% 100%;
+  }
+}
+
+@keyframes energizedFlash {
+  0% {
+    opacity: 0.1;
+    transform: translate3d(-6%, 6%, 0);
+  }
+  35% {
+    opacity: 0.75;
+    transform: translate3d(2%, -2%, 0);
+  }
+  65% {
+    opacity: 0.25;
+    transform: translate3d(6%, -4%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(-4%, 4%, 0);
+  }
+}
 @layer components {
   /* For Chrome, Safari */
   .progress-bar::-webkit-progress-bar {

@@ -220,7 +220,7 @@ function DeviceDetail() {
       </div>
 
       {/* Header */}
-      <div className="rounded-3xl border border-indigo-100 bg-white shadow-lg p-10 space-y-6">
+      <div className="rounded-3xl border border-indigo-100 bg-white shadow-lg p-10 space-y-6 energized-surge overflow-hidden relative">
         <div className="flex flex-wrap justify-between gap-6 items-start">
           <div className="space-y-2">
             <Heading Tag="h1" className="text-4xl font-bold text-slate-900">
