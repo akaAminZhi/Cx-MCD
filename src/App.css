@@ -26,102 +26,90 @@
 }
 
 /* ======================================================
-   Lightning surge background for energized components
-   Only apply the `energized-surge` class when the
-   component truly represents energized state. The effect
-   layers flickering bolts with subtle glows so content
-   stays readable while the lightning animates beneath it.
-*/
+   Electric surge background for energized components
+   Creates layered lightning strokes that animate in the
+   background without blocking content. Apply the
+   `energized-surge` class to any card/container. */
 .energized-surge {
   position: relative;
-  z-index: 0;
   overflow: hidden;
   isolation: isolate;
-  background: radial-gradient(circle at 22% 18%, rgba(59, 130, 246, 0.12), transparent 32%),
-    radial-gradient(circle at 82% 4%, rgba(6, 182, 212, 0.12), transparent 28%),
-    radial-gradient(circle at 50% 60%, rgba(94, 234, 212, 0.08), transparent 45%);
+  background: radial-gradient(circle at 20% 20%, rgba(79, 70, 229, 0.08), transparent 35%),
+    radial-gradient(circle at 80% 0%, rgba(14, 165, 233, 0.08), transparent 30%);
 }
 
 .energized-surge::before,
 .energized-surge::after {
   content: "";
   position: absolute;
-  inset: -32%;
+  inset: -30%;
   pointer-events: none;
   z-index: -1;
   mix-blend-mode: screen;
 }
 
-/* Forked bolt stack */
 .energized-surge::before {
-  background:
-    linear-gradient(118deg, transparent 46%, rgba(255, 255, 255, 0.95) 50%, transparent 54%),
-    linear-gradient(118deg, transparent 48%, rgba(59, 130, 246, 0.8) 50%, transparent 52%),
-    linear-gradient(118deg, transparent 45%, rgba(56, 189, 248, 0.75) 50%, transparent 55%);
-  background-size: 280% 280%;
-  filter: drop-shadow(0 0 24px rgba(59, 130, 246, 0.55)) drop-shadow(0 0 32px rgba(6, 182, 212, 0.35));
-  animation: lightningFork 3.6s ease-in-out infinite;
-  opacity: 0.85;
+  background: repeating-linear-gradient(
+      115deg,
+      rgba(79, 70, 229, 0.28) 0%,
+      rgba(59, 130, 246, 0.2) 8%,
+      transparent 14%,
+      transparent 22%
+    ),
+    repeating-linear-gradient(
+      -115deg,
+      rgba(244, 114, 182, 0.25) 0%,
+      rgba(124, 58, 237, 0.18) 6%,
+      transparent 12%,
+      transparent 20%
+    );
+  background-size: 140% 140%, 160% 160%;
+  filter: drop-shadow(0 0 12px rgba(79, 70, 229, 0.35));
+  animation: energizedFlow 8s linear infinite;
+  opacity: 0.55;
 }
 
-/* Ambient glow/flicker */
 .energized-surge::after {
-  inset: -18%;
-  background:
-    radial-gradient(circle at 30% 40%, rgba(255, 255, 255, 0.25), transparent 35%),
-    radial-gradient(circle at 70% 30%, rgba(56, 189, 248, 0.35), transparent 38%),
-    radial-gradient(circle at 60% 70%, rgba(59, 130, 246, 0.35), transparent 42%);
-  filter: blur(2px) drop-shadow(0 0 18px rgba(255, 255, 255, 0.4));
-  animation: lightningPulse 2.4s ease-in-out infinite;
-  opacity: 0.8;
+  inset: -20%;
+  background: linear-gradient(
+    120deg,
+    transparent 10%,
+    rgba(255, 255, 255, 0.4) 35%,
+    rgba(94, 234, 212, 0.35) 50%,
+    transparent 70%
+  );
+  animation: energizedFlash 3.5s ease-in-out infinite;
+  opacity: 0.45;
 }
 
-@keyframes lightningFork {
+@keyframes energizedFlow {
   0% {
-    background-position: 140% -20%;
-    opacity: 0;
+    background-position: 0% 0%, 100% 0%;
   }
-  6% {
-    background-position: 82% 22%;
-    opacity: 1;
+  50% {
+    background-position: 50% 50%, 40% 60%;
   }
-  14% {
-    background-position: 62% 66%;
-    opacity: 0.35;
+  100% {
+    background-position: 120% 110%, -20% 100%;
   }
-  24% {
-    background-position: 28% 108%;
-    opacity: 0.9;
+}
+
+@keyframes energizedFlash {
+  0% {
+    opacity: 0.1;
+    transform: translate3d(-6%, 6%, 0);
   }
-  32% {
+  35% {
+    opacity: 0.75;
+    transform: translate3d(2%, -2%, 0);
+  }
+  65% {
     opacity: 0.25;
+    transform: translate3d(6%, -4%, 0);
   }
   100% {
-    background-position: -60% 140%;
     opacity: 0;
-  }
-}
-
-@keyframes lightningPulse {
-  0% {
-    opacity: 0.15;
-    transform: scale(1.04);
-  }
-  20% {
-    opacity: 0.65;
-    transform: scale(1.08);
-  }
-  32% {
-    opacity: 0.35;
-    transform: scale(1.02);
-  }
-  48% {
-    opacity: 0.8;
-    transform: scale(1.1);
-  }
-  100% {
-    opacity: 0.2;
-    transform: scale(1.03);
+    transform: translate3d(-4%, 4%, 0);
   }
 }
 @layer components {
