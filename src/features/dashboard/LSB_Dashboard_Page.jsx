@@ -3,7 +3,7 @@ import { PiPlugsConnectedBold } from "react-icons/pi";
 import {
   HiBolt,
   HiCalendarDays,
-  HiExclamationTriangle,
+  HiBoltSlash,
   HiFire,
   HiMagnifyingGlass,
   HiMiniArrowTrendingUp,
@@ -15,7 +15,7 @@ import Heading from "../../ui/Heading";
 import { useProjectEquipments } from "../../hooks/useProjectEquipments";
 import Spinner from "../../ui/Spinner";
 import { useDeviceFiles } from "../../hooks/useDeviceFiles";
-import Modal, { useModal } from "../../ui/Modal";
+// import Modal, { useModal } from "../../ui/Modal";
 import DeviceEditor from "../../ui/DeviceEditor";
 
 // ======================================================
@@ -132,7 +132,12 @@ function DeviceCard({ device }) {
                 : "bg-amber-50 text-amber-700 border-amber-200"
             }`}
           >
-            <HiBolt className="w-5 h-5" />
+            {device.energized ? (
+              <HiBolt className="w-5 h-5" />
+            ) : (
+              <HiBoltSlash className="w-5 h-5" />
+            )}
+
             {device.energized ? "Energized" : "Not energized"}
           </span>
 
@@ -159,12 +164,12 @@ function DeviceCard({ device }) {
 
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-slate-400" />
-          <span className="truncate">From: {device.from}</span>
+          <span className="truncate">From: {device.computed_from}</span>
         </div>
 
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-indigo-400" />
-          <span className="truncate">To: {device.to}</span>
+          <span className="truncate">To: {device.computed_to}</span>
         </div>
       </div>
 
@@ -195,7 +200,7 @@ function LSB_Dashboard_Page() {
   const [page, setPage] = useState(1);
 
   const pageSize = 9;
-  const { open } = useModal();
+  //   const { open } = useModal();
   const projectId = "lsb";
 
   const [activeDevice, setActiveDevice] = useState(null);
@@ -429,7 +434,7 @@ function LSB_Dashboard_Page() {
             className="text-left"
             onClick={() => {
               setActiveDevice(device);
-              open("device-editor");
+              //   open("device-editor");
             }}
           >
             <DeviceCard device={device} />
@@ -444,7 +449,7 @@ function LSB_Dashboard_Page() {
       </section>
 
       {/* EDIT MODAL */}
-      <Modal.Window name="device-editor" size="xl">
+      {/* <Modal.Window name="device-editor" size="xl">
         {({ closeModal }) => (
           <DeviceEditor
             device={activeDevice}
@@ -452,7 +457,7 @@ function LSB_Dashboard_Page() {
             closeModal={closeModal}
           />
         )}
-      </Modal.Window>
+      </Modal.Window> */}
     </div>
   );
 }

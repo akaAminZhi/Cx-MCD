@@ -88,6 +88,7 @@ function LSB_Emergency_Raiser({
           break;
         case "PolyLine":
           cable.push(item);
+
           break;
         case "Breaker":
           breakers.push(item);
@@ -155,7 +156,6 @@ function LSB_Emergency_Raiser({
     });
     onNodeLeave?.();
   };
-
   return (
     <>
       {panelboards.map((item) => (
