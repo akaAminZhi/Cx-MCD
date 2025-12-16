@@ -96,7 +96,8 @@ function DeviceCard({ device }) {
         transition-all duration-200 ease-out cursor-pointer energized-surge
         hover:-translate-y-1 hover:shadow-xl hover:border-indigo-300 hover:bg-indigo-50/40
         focus-within:-translate-y-1 focus-within:shadow-xl focus-within:border-indigo-400
-      "
+        ${device.energized ? "energized-surge" : ""}
+      `}
     >
       <span
         className="
