@@ -89,15 +89,19 @@ function DeviceCard({ device }) {
 
   const fileCount = filesError ? "?" : (filesData?.count ?? 0);
 
+  const baseCardClasses = `
+    group relative border rounded-2xl bg-white p-6 shadow-sm flex flex-col gap-5 overflow-hidden
+    transition-all duration-200 ease-out cursor-pointer
+    hover:-translate-y-1 hover:shadow-xl
+    focus-within:-translate-y-1 focus-within:shadow-xl
+  `;
+
+  const energizedTone = device.energized
+    ? "energized-surge border-rose-200 hover:border-rose-300 focus-within:border-rose-400 hover:bg-rose-50/40"
+    : "hover:border-indigo-300 focus-within:border-indigo-400 hover:bg-indigo-50/40";
+
   return (
-    <article
-      className="
-        group relative border rounded-2xl bg-white p-6 shadow-sm flex flex-col gap-5 
-        transition-all duration-200 ease-out cursor-pointer
-        hover:-translate-y-1 hover:shadow-xl hover:border-indigo-300 hover:bg-indigo-50/40
-        focus-within:-translate-y-1 focus-within:shadow-xl focus-within:border-indigo-400
-      "
-    >
+    <article className={`${baseCardClasses.trim()} ${energizedTone}`.trim()}>
       <span
         className="
           absolute inset-y-4 left-0 w-1 bg-indigo-400/80 rounded-r-2xl opacity-0
