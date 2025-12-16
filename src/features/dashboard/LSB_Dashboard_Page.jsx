@@ -89,15 +89,18 @@ function DeviceCard({ device }) {
 
   const fileCount = filesError ? "?" : (filesData?.count ?? 0);
 
+  const baseCardClasses = `
+    group relative border rounded-2xl bg-white p-6 shadow-sm flex flex-col gap-5 overflow-hidden
+    transition-all duration-200 ease-out cursor-pointer
+    hover:-translate-y-1 hover:shadow-xl hover:border-indigo-300 hover:bg-indigo-50/40
+    focus-within:-translate-y-1 focus-within:shadow-xl focus-within:border-indigo-400
+  `;
+
   return (
     <article
-      className="
-        group relative border rounded-2xl bg-white p-6 shadow-sm flex flex-col gap-5 overflow-hidden
-        transition-all duration-200 ease-out cursor-pointer energized-surge
-        hover:-translate-y-1 hover:shadow-xl hover:border-indigo-300 hover:bg-indigo-50/40
-        focus-within:-translate-y-1 focus-within:shadow-xl focus-within:border-indigo-400
-        ${device.energized ? "energized-surge" : ""}
-      `}
+      className={`${baseCardClasses.trim()} ${
+        device.energized ? "energized-surge" : ""
+      }`.trim()}
     >
       <span
         className="
