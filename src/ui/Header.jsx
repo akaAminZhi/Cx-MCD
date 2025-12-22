@@ -1,8 +1,8 @@
 import { Link, useLocation } from "react-router";
 import { HiOutlinePaperAirplane } from "react-icons/hi2";
 import { getCurrentPath } from "../utils/analysePath";
-import Button from "./Button";
-import Logout from "../features/authentication/Logout";
+// import Button from "./Button";
+// import Logout from "../features/authentication/Logout";
 
 function Header() {
   const location = useLocation();
@@ -42,7 +42,7 @@ function Header() {
           );
         })}
       </nav>
-      <Logout></Logout>
+      {/* <Logout></Logout> */}
     </header>
   );
 }
