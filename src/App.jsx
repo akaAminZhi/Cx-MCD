@@ -13,6 +13,37 @@ import PageNotFound from "./pages/PageNotFound";
 import AuthProvider from "./features/authentication/AuthProvider";
 import RequireAuth from "./features/authentication/RequireAuth";
 
+import ProtectedLayout from "./features/authentication/ProtectedLayout";
+import AuthAxiosBridge from "./features/authentication/AuthAxiosBridge";
+
+// const router = createBrowserRouter([
+//   // ✅ login 独立（不走 AppLayout，不显示 header/sidebar）
+//   { path: "/login", element: <Login /> },
+
+//   // ✅ 业务区域：先 AppLayout，再 ProtectedLayout，再各个页面
+//   {
+//     path: "/",
+//     element: <AppLayout />,
+//     children: [
+//       { index: true, loader: () => redirect("/dashboard") },
+
+//       {
+//         // 这一层统一做登录保护
+//         element: <ProtectedLayout />,
+//         children: [
+//           { path: "dashboard", element: <Dashboard /> },
+//           { path: "home", loader: () => redirect("/dashboard") },
+//           { path: "lsbdiagrams", element: <LSB_Diagrams /> },
+//           { path: "devices/:deviceId", element: <DeviceDetail /> },
+//           // ...以后再加几十个也不用重复包 RequireAuth
+//         ],
+//       },
+//     ],
+//   },
+
+//   { path: "*", element: <PageNotFound /> },
+// ]);
+
 const router = createBrowserRouter([
   {
     id: "root",
@@ -23,9 +54,9 @@ const router = createBrowserRouter([
       {
         path: "dashboard",
         element: (
-          <RequireAuth>
-            <Dashboard />
-          </RequireAuth>
+          // <RequireAuth>
+          <Dashboard />
+          // </RequireAuth>
         ),
       },
       { path: "home", loader: () => redirect("/dashboard") },
@@ -49,6 +80,7 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <AuthProvider>
+      <AuthAxiosBridge />
       <QueryClientProvider client={queryClient}>
         <ReactQueryDevtools initialIsOpen={false} />
         <RouterProvider router={router} />
