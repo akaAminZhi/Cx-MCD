@@ -35,7 +35,7 @@ function getFilePageMeta(device) {
       return {
         label: "Emergency",
         tone: "bg-rose-50 text-rose-700 border-rose-200",
-        icon: <HiBolt className="w-6 h-6" />,
+        icon: <HiBolt className="w-6 h-6 icon-jump-pulse" />,
       };
   }
   return {
@@ -234,9 +234,7 @@ function DeviceDetail() {
       {/* Header */}
       <div
         className={`rounded-3xl border bg-white shadow-lg p-10 space-y-6 overflow-hidden relative ${
-          device.energized
-            ? "energized-surge border-rose-300"
-            : "border-indigo-100"
+          device.energized ? " border-rose-300" : "border-indigo-100"
         }`}
       >
         <div className="flex flex-wrap justify-between gap-6 items-start">
@@ -260,7 +258,7 @@ function DeviceDetail() {
               <InfoPill
                 icon={
                   device.energized ? (
-                    <HiBolt className="w-6 h-6" />
+                    <HiBolt className="w-6 h-6 icon-jump-pulse" />
                   ) : (
                     <HiBoltSlash className="w-6 h-6" />
                   )

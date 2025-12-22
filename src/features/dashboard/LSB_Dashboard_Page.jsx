@@ -98,7 +98,7 @@ function DeviceCard({ device }) {
   `;
 
   const energizedTone = device.energized
-    ? "energized-surge border-rose-300 hover:border-rose-400 focus-within:border-rose-500 hover:bg-rose-50/50"
+    ? " border-rose-300 hover:border-rose-400 focus-within:border-rose-500 hover:bg-rose-50/50"
     : "hover:border-indigo-300 focus-within:border-indigo-400 hover:bg-indigo-50/40";
 
   const accentBar = device.energized
@@ -148,7 +148,7 @@ function DeviceCard({ device }) {
             }`}
           >
             {device.energized ? (
-              <HiBolt className="w-5 h-5" />
+              <HiBolt className="w-5 h-5 icon-jump-pulse" />
             ) : (
               <HiBoltSlash className="w-5 h-5" />
             )}
@@ -316,13 +316,13 @@ function LSB_Dashboard_Page() {
         <SummaryCard
           title="Energized"
           value={summary.energized}
-          icon={<HiBolt className="w-8 h-8" />}
+          icon={<HiBolt className="w-8 h-8 icon-jump-pulse" />}
           tone="border-emerald-200 bg-emerald-50/40"
         />
         <SummaryCard
           title="Today Active"
           value={summary.today}
-          icon={<HiMiniArrowTrendingUp className="w-8 h-8" />}
+          icon={<HiMiniArrowTrendingUp className="w-8 h-8 " />}
           tone="border-indigo-200 bg-indigo-50/40"
         />
         <SummaryCard
