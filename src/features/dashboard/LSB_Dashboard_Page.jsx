@@ -216,6 +216,7 @@ function LSB_Dashboard_Page() {
   const [energizedFilter, setEnergizedFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
+  const [subjectFilter, setSubjectFilter] = useState("all");
 
   const pageSize = 9;
   //   const { open } = useModal();
@@ -226,31 +227,52 @@ function LSB_Dashboard_Page() {
   const { data, isLoading, error } = useProjectEquipments(projectId);
   const Equipement = data?.data ?? [];
 
+  const subjectOptions = useMemo(() => {
+    const set = new Set();
+    for (const d of Equipement) {
+      const s = (d.subject ?? "").trim();
+      if (s) set.add(s);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [Equipement]);
   // ===== filtering logic =====
   const filteredAll = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
+
     return Equipement.filter((device) => {
+      // page filter
       if (
         pageFilter === "normal" &&
         !(device.project === "lsb" && device.file_page === 1)
       )
         return false;
+
       if (
         pageFilter === "emergency" &&
         !(device.project === "lsb" && device.file_page === 2)
       )
         return false;
+
+      // energized filter
       if (energizedFilter === "on" && !device.energized) return false;
       if (energizedFilter === "off" && device.energized) return false;
+
+      // ✅ subject filter (must be BEFORE early-return)
+      if (subjectFilter !== "all") {
+        const subj = (device.subject ?? "").trim();
+        if (subj !== subjectFilter) return false;
+      }
+
+      // search term
       if (!term) return true;
 
-      return (
-        device.id.toLowerCase().includes(term) ||
-        device.subject.toLowerCase().includes(term) ||
-        device.text.toLowerCase().includes(term)
-      );
+      const id = (device.id ?? "").toLowerCase();
+      const subject = (device.subject ?? "").toLowerCase();
+      const text = (device.text ?? "").toLowerCase();
+
+      return id.includes(term) || subject.includes(term) || text.includes(term);
     });
-  }, [Equipement, pageFilter, energizedFilter, searchTerm]);
+  }, [Equipement, pageFilter, energizedFilter, subjectFilter, searchTerm]);
 
   const totalCount = filteredAll.length;
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
@@ -400,6 +422,28 @@ function LSB_Dashboard_Page() {
               <option value="all">All energy states</option>
               <option value="on">Energized</option>
               <option value="off">Not energized</option>
+            </select>
+
+            {/* SUBJECT FILTER */}
+            <select
+              value={subjectFilter}
+              onChange={(e) => {
+                setSubjectFilter(e.target.value);
+                setPage(1);
+              }}
+              className="
+    border rounded-xl px-4 py-2 text-xl
+    focus:outline focus:outline-2 focus:outline-indigo-500
+  "
+            >
+              <option value="all">All subjects</option>
+              {subjectOptions
+                .filter((s) => s !== "all")
+                .map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
             </select>
           </div>
 
