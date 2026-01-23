@@ -11,7 +11,7 @@ import {
   HiOutlineMapPin,
 } from "react-icons/hi2";
 import { format, formatDistanceToNow, isAfter, subHours } from "date-fns";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate, useSearchParams } from "react-router";
 import Heading from "../../ui/Heading";
 import { useProjectEquipments } from "../../hooks/useProjectEquipments";
 import Spinner from "../../ui/Spinner";
@@ -212,18 +212,49 @@ function DeviceCard({ device }) {
 // MAIN DASHBOARD PAGE (Unified Typography)
 // ======================================================
 function LSB_Dashboard_Page() {
-  const [pageFilter, setPageFilter] = useState("all");
-  const [energizedFilter, setEnergizedFilter] = useState("all");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [page, setPage] = useState(1);
-  const [subjectFilter, setSubjectFilter] = useState("all");
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  // 从 query params 初始化 state（保持原来的默认值作为回退）
+  const initialSearch = searchParams.get("q") ?? "";
+  const initialPageFilter = searchParams.get("pageFilter") ?? "all";
+  const initialEnergizedFilter = searchParams.get("energized") ?? "all";
+  const initialSubjectFilter = searchParams.get("subject") ?? "all";
+  const initialPage = parseInt(searchParams.get("page") ?? "1", 10);
 
+  const [pageFilter, setPageFilter] = useState(initialPageFilter);
+  const [energizedFilter, setEnergizedFilter] = useState(
+    initialEnergizedFilter
+  );
+  const [searchTerm, setSearchTerm] = useState(initialSearch);
+  const [page, setPage] = useState(initialPage);
+  const [subjectFilter, setSubjectFilter] = useState(initialSubjectFilter);
   const pageSize = 9;
   //   const { open } = useModal();
   const projectId = "lsb";
 
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const params = {};
+
+    if (searchTerm) params.q = searchTerm;
+    if (pageFilter && pageFilter !== "all") params.pageFilter = pageFilter;
+    if (energizedFilter && energizedFilter !== "all")
+      params.energized = energizedFilter;
+    if (subjectFilter && subjectFilter !== "all")
+      params.subject = subjectFilter;
+    if (page && page !== 1) params.page = String(page);
+
+    // replace: true 避免每次都产生新的历史记录条目
+    setSearchParams(params, { replace: true });
+  }, [
+    searchTerm,
+    pageFilter,
+    energizedFilter,
+    subjectFilter,
+    page,
+    setSearchParams,
+  ]);
   const { data, isLoading, error } = useProjectEquipments(projectId);
   const Equipement = data?.data ?? [];
 
@@ -500,7 +531,9 @@ function LSB_Dashboard_Page() {
             key={device.id}
             className="text-left"
             onClick={() => {
-              navigate(`/devices/${device.id}`, { state: { device } });
+              navigate(`/devices/${device.id}${location.search}`, {
+                state: { device, fromSearch: location.search },
+              });
             }}
           >
             <DeviceCard device={device} />

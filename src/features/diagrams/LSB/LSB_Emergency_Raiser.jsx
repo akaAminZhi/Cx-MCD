@@ -71,6 +71,9 @@ function LSB_Emergency_Raiser({
         case "panel board":
           panelboards.push(item);
           break;
+        case "ATS":
+          panelboards.push(item);
+          break;
         case "transformer":
           transforms.push(item);
           break;

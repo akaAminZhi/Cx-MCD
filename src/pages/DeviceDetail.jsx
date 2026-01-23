@@ -218,7 +218,17 @@ function DeviceDetail() {
       {/* Top bar */}
       <div className="flex items-center justify-between gap-6">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => {
+            // 若从 Dashboard 带来了 fromSearch（例如 "?q=...&subject=..."），则显式导航回带 query 的 dashboard
+            const fromSearch = state?.fromSearch;
+            if (fromSearch) {
+              // 如果你的 dashboard 路径是 '/dashboard'，请替换下面的路径为你真实的 dashboard 路径
+              navigate(`/dashboard${fromSearch}`);
+            } else {
+              // 否则回退历史（如果用户是从 dashboard 过来的，这会恢复 query）
+              navigate(-1);
+            }
+          }}
           className="inline-flex items-center gap-3 text-xl font-semibold text-indigo-700 px-5 py-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-100"
         >
           <HiArrowLeft className="w-6 h-6" /> Back to dashboard
