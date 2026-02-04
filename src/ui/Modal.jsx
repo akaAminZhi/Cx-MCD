@@ -48,7 +48,7 @@ function Open({ children, opens: modalWindowName }) {
  * - size: "md" | "lg" | "xl" （默认 lg）
  * - className: 额外样式（可覆盖）
  */
-function Window({ children, name, size = "lg" }) {
+function Window({ children, name, size = "xl" }) {
   const { close, openName } = useContext(ModalContext);
   const ref = useClickOutside(close);
 

@@ -13,6 +13,8 @@ import Spinner from "../ui/Spinner";
 import DeviceSearchBox from "../ui/DeviceSearchBox";
 import Modal, { useModal } from "../ui/Modal";
 import DeviceEditor from "../ui/DeviceEditor";
+import { useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 
 const DIAGRAM_CONFIG = {
   Normal: {
@@ -28,11 +30,27 @@ const DIAGRAM_CONFIG = {
 };
 const DIAGRAMS = Object.keys(DIAGRAM_CONFIG);
 const projectId = "lsb";
-
+const SUBJECTS = ["panel board", "ATS", "Generator", "transformer"];
 export default function LSB_Diagrams() {
   const [active, setActive] = useState("Normal");
   const [selectedDevice, setSelectedDevice] = useState(null);
 
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    SUBJECTS.forEach((s) => {
+      qc.prefetchQuery({
+        queryKey: ["subjectSteps", s],
+        queryFn: async () => {
+          const res = await axios.get(
+            `/api/v1/subjects/${encodeURIComponent(s)}/steps?active_only=true`
+          );
+          return res.data;
+        },
+        staleTime: 10 * 60 * 1000,
+      });
+    });
+  }, [qc]);
   return (
     <Modal>
       {/* 顶部 Normal / Emergency 切换按钮 */}
