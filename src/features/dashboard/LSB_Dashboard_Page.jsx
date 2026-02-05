@@ -15,7 +15,7 @@ import { useLocation, useNavigate, useSearchParams } from "react-router";
 import Heading from "../../ui/Heading";
 import { useProjectEquipments } from "../../hooks/useProjectEquipments";
 import Spinner from "../../ui/Spinner";
-import { useDeviceFiles } from "../../hooks/useDeviceFiles";
+// import { useDeviceFiles } from "../../hooks/useDeviceFiles";
 // import Modal, { useModal } from "../../ui/Modal";
 
 // ======================================================
@@ -82,13 +82,13 @@ function DeviceCard({ device }) {
     ? format(new Date(device.will_energized_at), "MMM d, HH:mm")
     : null;
 
-  const {
-    data: filesData,
-    isLoading: isFilesLoading,
-    error: filesError,
-  } = useDeviceFiles(device.id);
+  // const {
+  //   data: filesData,
+  //   isLoading: isFilesLoading,
+  //   error: filesError,
+  // } = useDeviceFiles(device.id);
 
-  const fileCount = filesError ? "?" : (filesData?.count ?? 0);
+  // const fileCount = filesError ? "?" : (filesData?.count ?? 0);
 
   const baseCardClasses = `
     group relative border rounded-2xl bg-white p-6 shadow-sm flex flex-col gap-5 overflow-hidden
@@ -196,7 +196,7 @@ function DeviceCard({ device }) {
           Updated {updatedAgo}
         </span>
         <span className="px-3 py-1 bg-slate-50 text-slate-700 border border-slate-100 rounded-full">
-          Files: {isFilesLoading ? "…" : fileCount}
+          Files: {device.file_count ?? 0}
         </span>
         {scheduled && (
           <span className="px-3 py-1 bg-amber-50 text-amber-700 border border-amber-100 rounded-full flex items-center gap-1">
@@ -235,18 +235,21 @@ function LSB_Dashboard_Page() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const params = {};
+    const t = setTimeout(() => {
+      const params = {};
 
-    if (searchTerm) params.q = searchTerm;
-    if (pageFilter && pageFilter !== "all") params.pageFilter = pageFilter;
-    if (energizedFilter && energizedFilter !== "all")
-      params.energized = energizedFilter;
-    if (subjectFilter && subjectFilter !== "all")
-      params.subject = subjectFilter;
-    if (page && page !== 1) params.page = String(page);
+      if (searchTerm) params.q = searchTerm;
+      if (pageFilter && pageFilter !== "all") params.pageFilter = pageFilter;
+      if (energizedFilter && energizedFilter !== "all")
+        params.energized = energizedFilter;
+      if (subjectFilter && subjectFilter !== "all")
+        params.subject = subjectFilter;
+      if (page && page !== 1) params.page = String(page);
 
-    // replace: true 避免每次都产生新的历史记录条目
-    setSearchParams(params, { replace: true });
+      setSearchParams(params, { replace: true });
+    }, 350);
+
+    return () => clearTimeout(t);
   }, [
     searchTerm,
     pageFilter,

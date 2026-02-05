@@ -12,23 +12,16 @@ import {
 } from "react-icons/hi2";
 
 import Button from "./Button";
+import Toggle from "./Toggle";
 import { useDeviceFiles } from "../hooks/useDeviceFiles";
 import { useUploadDeviceFile } from "../hooks/useUploadDeviceFile";
 import { useSubjectSteps } from "../hooks/useSubjectSteps";
 
 /**
  * StatusStepper
- * - props:
- *    statuses: array of step labels, in order
- *    currentStatus: string (must match one of statuses)
- *    onStepClick?: function(index, label)
- *
- * 视觉说明：
- * - completed: green badge with check + filled connector
- * - current: indigo badge with index number + highlighted connector section
- * - upcoming: gray badge with index number + muted connector
- *
- * 横向响应：在窄屏设备上支持横向滚动。
+ * - steps: [{ key, label }]
+ * - currentKey: 当前状态 key
+ * - onStepClick?: (index, step) => void
  */
 function StatusStepper({ steps = [], currentKey, onStepClick }) {
   const count = steps.length || 1;
@@ -36,21 +29,16 @@ function StatusStepper({ steps = [], currentKey, onStepClick }) {
   const currentIndex = rawIndex >= 0 ? rawIndex : 0;
 
   return (
-    // 关键：允许 y 方向可见 + 给上/下留出空间
-    <div className="w-full overflow-x-auto overflow-y-visible py-3">
+    <div className="w-full overflow-x-auto overflow-y-visible py-4">
       <style>{`
         @keyframes dashFlow {
           0% { stroke-dashoffset: 0; }
           100% { stroke-dashoffset: -16; }
         }
-
-        /* 线条轻微 glow（current 段） */
         @keyframes glowPulseLine {
           0%, 100% { opacity: .18; filter: drop-shadow(0 0 0 rgba(79,70,229,0)); }
           50%      { opacity: .35; filter: drop-shadow(0 0 6px rgba(79,70,229,.28)); }
         }
-
-        /* 方案2：box-shadow 呼吸（更自然） */
         @keyframes dotGlow {
           0%, 100% {
             box-shadow:
@@ -59,18 +47,17 @@ function StatusStepper({ steps = [], currentKey, onStepClick }) {
           }
           50% {
             box-shadow:
-              0 0 0 6px rgba(99,102,241,0.18),
-              0 0 18px 2px rgba(99,102,241,0.28);
+              0 0 0 8px rgba(99,102,241,0.18),
+              0 0 22px 4px rgba(99,102,241,0.28);
           }
         }
       `}</style>
 
       <div
-        className="grid items-start gap-x-6 px-2"
+        className="grid items-start gap-x-8 px-2"
         style={{ gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))` }}
       >
         {steps.map((step, i) => {
-          const label = step.label;
           const isCompleted = i < currentIndex;
           const isCurrent = i === currentIndex;
 
@@ -96,18 +83,18 @@ function StatusStepper({ steps = [], currentKey, onStepClick }) {
           const hasNext = i < count - 1;
 
           return (
-            <div key={`${label}-${i}`} className="flex flex-col items-center">
-              {/* Dot + connector layer */}
-              {/* 关键：这里加 py-2 给光晕留空间，避免被 svg/布局挤压 */}
-              <div className="relative w-full flex items-center justify-center py-2">
+            <div
+              key={`${step.key}-${i}`}
+              className="flex flex-col items-center"
+            >
+              <div className="relative w-full flex items-center justify-center py-3">
                 {hasNext && (
                   <svg
-                    className="absolute left-1/2 top-1/2 w-full h-10 -translate-y-1/2 pointer-events-none"
+                    className="absolute left-1/2 top-1/2 w-full h-12 -translate-y-1/2 pointer-events-none"
                     viewBox="0 0 100 24"
                     preserveAspectRatio="none"
                     aria-hidden
                   >
-                    {/* completed */}
                     {segmentState === "completed" && (
                       <g className="text-indigo-600">
                         <line
@@ -122,7 +109,6 @@ function StatusStepper({ steps = [], currentKey, onStepClick }) {
                       </g>
                     )}
 
-                    {/* current: 轻微 glow + 虚线流动 */}
                     {segmentState === "current" && (
                       <g className="text-indigo-600">
                         <line
@@ -131,7 +117,7 @@ function StatusStepper({ steps = [], currentKey, onStepClick }) {
                           x2="95"
                           y2="12"
                           stroke="currentColor"
-                          strokeWidth="6"
+                          strokeWidth="7"
                           strokeLinecap="round"
                           style={{
                             animation:
@@ -165,7 +151,6 @@ function StatusStepper({ steps = [], currentKey, onStepClick }) {
                       </g>
                     )}
 
-                    {/* upcoming */}
                     {segmentState === "upcoming" && (
                       <g className="text-slate-300">
                         <line
@@ -182,31 +167,29 @@ function StatusStepper({ steps = [], currentKey, onStepClick }) {
                   </svg>
                 )}
 
-                {/* Dot */}
                 <button
                   type="button"
                   onClick={() => onStepClick?.(i, step)}
-                  className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full text-lg font-semibold transition-colors ${dotClass}`}
+                  className={`relative z-10 flex items-center justify-center w-12 h-12 rounded-full text-2xl font-semibold transition-colors ${dotClass}`}
                   aria-current={isCurrent ? "step" : undefined}
                   style={
                     isCurrent
                       ? {
                           animation: "dotGlow 1.8s ease-in-out infinite",
-                          transform: "scale(1.05)",
+                          transform: "scale(1.06)",
                           transition: "transform 200ms ease",
                         }
                       : undefined
                   }
                 >
-                  {isCompleted ? <HiOutlineCheck className="w-5 h-5" /> : i + 1}
+                  {isCompleted ? <HiOutlineCheck className="w-6 h-6" /> : i + 1}
                 </button>
               </div>
 
-              {/* Label */}
               <div
-                className={`mt-1 text-xl text-center leading-snug max-w-[160px] ${textClass}`}
+                className={`mt-1 text-2xl text-center leading-snug max-w-[220px] ${textClass}`}
               >
-                {label}
+                {step.label}
               </div>
             </div>
           );
@@ -226,8 +209,6 @@ StatusStepper.propTypes = {
   currentKey: PropTypes.string,
   onStepClick: PropTypes.func,
 };
-
-/* ===================== DeviceEditor ===================== */
 
 export default function DeviceEditor({ device, projectId, closeModal }) {
   const [name, setName] = useState(device?.text || device?.name || "");
@@ -268,15 +249,15 @@ export default function DeviceEditor({ device, projectId, closeModal }) {
   const qc = useQueryClient();
   const subject = device?.subject;
 
-  // 从缓存读：prefetchQuery 已经塞进去了
   const {
     data: stepsResp,
     isLoading: stepsLoading,
-    isError,
+    isError: stepsError,
   } = useSubjectSteps(subject);
   const subjectSteps = stepsResp?.data ?? [];
 
   const currentKey = device?.current_status || subjectSteps?.[0]?.key || "";
+
   const mutation = useMutation({
     mutationFn: async ({ id, payload }) => {
       const res = await axios.put(`/api/v1/devices/${id}`, payload);
@@ -296,6 +277,7 @@ export default function DeviceEditor({ device, projectId, closeModal }) {
     isError: filesError,
   } = useDeviceFiles(device.id);
   const files = filesData?.data ?? [];
+
   const uploadMutation = useUploadDeviceFile();
 
   const handleFileChange = (e) => {
@@ -344,8 +326,9 @@ export default function DeviceEditor({ device, projectId, closeModal }) {
     }
   };
 
-  if (!device)
-    return <div className="text-lg text-gray-500 p-4">Loading device…</div>;
+  if (!device) {
+    return <div className="text-2xl text-gray-500 p-6">Loading device…</div>;
+  }
 
   const save = () => {
     const payload = {
@@ -358,386 +341,325 @@ export default function DeviceEditor({ device, projectId, closeModal }) {
     mutation.mutate({ id: device.id, payload });
   };
 
-  // optional click handler (现在只是 console.log，方便将来扩展)
-  const handleStepClick = (index, label) => {
-    // 如果你想允许点击跳转到某一步（例如展示日志、打开编辑器）， 在这里实现
-    // 当前我们仅做调试输出
-    console.log("step clicked", index, label);
+  const handleStepClick = (index, step) => {
+    console.log("step clicked", index, step);
   };
 
-  /* Reuse StatusBadge component idea from earlier? keep simple here - stepper already shows status */
-
   return (
-    <div className="w-[min(92vw,88rem)] max-h-[88vh] overflow-hidden p-6 text-xl">
-      {/* Top: Status Progress / Stepper */}
-      <div className="mb-4">
-        {stepsLoading ? (
-          <div className="text-sm text-slate-500">Loading steps…</div>
-        ) : isError ? (
-          <div className="text-sm text-red-500">Failed to load steps.</div>
-        ) : subjectSteps.length === 0 ? (
-          <div className="text-sm text-red-500">
-            No steps configured for subject: {subject}
-          </div>
-        ) : (
-          <StatusStepper
-            steps={subjectSteps}
-            currentKey={currentKey}
-            onStepClick={handleStepClick}
-          />
-        )}
-      </div>
-
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 mb-4">
-        <div>
-          <h3 className="text-2xl font-semibold text-slate-900">
-            Device — {device?.name || device?.text || device?.id}
-          </h3>
-          <div className="text-base text-slate-500">{device.id}</div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Left column: basic info */}
-        <div className="col-span-1 space-y-4">
-          <div>
-            <label className="block text-base text-slate-500 mb-1">Name</label>
-            <div className="flex items-center gap-3">
-              {isEditingName ? (
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  autoFocus
-                  className="w-full border rounded-md px-3 py-2 text-lg focus:outline-indigo-500"
-                />
-              ) : (
-                <div
-                  className="text-lg font-medium text-slate-900 truncate"
-                  title={name || device?.text || ""}
-                >
-                  {name || "-"}
-                </div>
-              )}
-
-              <button
-                type="button"
-                onClick={() => setIsEditingName((s) => !s)}
-                className="p-2 rounded-md hover:bg-slate-100"
-                aria-pressed={isEditingName}
-                title={isEditingName ? "Finish editing" : "Edit name"}
-              >
-                {isEditingName ? (
-                  <HiOutlineCheck className="w-5 h-5 text-green-600" />
-                ) : (
-                  <HiOutlinePencilSquare className="w-5 h-5 text-slate-700" />
-                )}
-              </button>
+    <div className="w-full h-full flex flex-col overflow-hidden p-8 text-2xl">
+      <div className="flex-1 min-h-0 overflow-auto">
+        {/* Top: Stepper */}
+        <div className="mb-6">
+          {stepsLoading ? (
+            <div className="text-xl text-slate-500">Loading steps…</div>
+          ) : stepsError ? (
+            <div className="text-xl text-red-500">Failed to load steps.</div>
+          ) : subjectSteps.length === 0 ? (
+            <div className="text-xl text-red-500">
+              No steps configured for subject: {subject}
             </div>
-          </div>
-
-          <div>
-            <label className="block text-base text-slate-500 mb-1">
-              Will be energized
-            </label>
-            <DatePicker
-              selected={willAt}
-              onChange={(d) => setWillAt(d)}
-              dateFormat="yyyy-MM-dd"
-              isClearable
-              className="w-full border rounded-md px-3 py-2 text-lg focus:outline-indigo-500 bg-white"
-              placeholderText="Select a date"
-            />
-          </div>
-
-          <div className="space-y-3">
-            {/* Energized row */}
-            <div className="flex items-center justify-between">
-              <div>
-                <div
-                  className={`text-base font-medium ${
-                    energized ? "text-indigo-700" : "text-slate-600"
-                  }`}
-                >
-                  Energized
-                </div>
-                <div
-                  className={`text-sm ${
-                    energized ? "text-indigo-600" : "text-slate-500"
-                  }`}
-                >
-                  {energized ? "Energized" : "De-energized"}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <label
-                  className="relative inline-flex items-center cursor-pointer"
-                  aria-label="Toggle energized"
-                >
-                  <input
-                    type="checkbox"
-                    checked={energized}
-                    onChange={(e) => setEnergized(e.target.checked)}
-                    className="sr-only"
-                    aria-checked={energized}
-                  />
-                  <span
-                    className={`w-12 h-7 inline-block rounded-full transition-all duration-200 ${
-                      energized ? "bg-indigo-600" : "bg-slate-300"
-                    }`}
-                    aria-hidden
-                  />
-                </label>
-
-                <div>
-                  {energized ? (
-                    <div className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-indigo-100 text-indigo-700">
-                      Energized
-                    </div>
-                  ) : (
-                    <div className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-slate-100 text-slate-700">
-                      De-energized
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Energized Today row */}
-            <div className="flex items-center justify-between">
-              <div>
-                <div
-                  className={`text-base font-medium ${
-                    energized
-                      ? "text-slate-400"
-                      : energizedToday
-                        ? "text-indigo-700"
-                        : "text-slate-600"
-                  }`}
-                >
-                  Energized today
-                </div>
-                <div
-                  className={`text-sm ${
-                    energized
-                      ? "text-slate-400"
-                      : energizedToday
-                        ? "text-indigo-600"
-                        : "text-slate-500"
-                  }`}
-                >
-                  {energized
-                    ? "Already"
-                    : energizedToday
-                      ? "Energized Today"
-                      : "Not Energized"}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <label
-                  className={`relative inline-flex items-center cursor-pointer ${
-                    energized ? "opacity-50 pointer-events-none" : ""
-                  }`}
-                  aria-label="Toggle energized today"
-                  title={
-                    energized
-                      ? "Device already energized"
-                      : "Toggle energized today"
-                  }
-                >
-                  <input
-                    type="checkbox"
-                    checked={energized ? false : energizedToday}
-                    onChange={(e) => setEnergizedToday(e.target.checked)}
-                    className="sr-only"
-                    aria-checked={energized ? false : energizedToday}
-                    disabled={energized}
-                  />
-                  <span
-                    className={`w-12 h-7 inline-block rounded-full transition-all duration-200 ${
-                      energized
-                        ? "bg-slate-200"
-                        : energizedToday
-                          ? "bg-indigo-600"
-                          : "bg-slate-300"
-                    }`}
-                    aria-hidden
-                  />
-                </label>
-
-                <div>
-                  {energized ? (
-                    <div className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-slate-100 text-slate-700">
-                      Already
-                    </div>
-                  ) : energizedToday ? (
-                    <div className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-indigo-100 text-indigo-700">
-                      Energized Today
-                    </div>
-                  ) : (
-                    <div className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-slate-100 text-slate-700">
-                      Not Energized
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Middle + right column: comments + files */}
-        <div className="col-span-1 md:col-span-2 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <label className="block text-base text-slate-500 mb-1">
-                Comments
-              </label>
-              <div className="text-sm text-slate-600">
-                {showComments ? "Visible" : comments ? "Hidden" : "No comments"}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {/* Toggle show/hide for comments */}
-              <button
-                type="button"
-                onClick={() => setShowComments((s) => !s)}
-                className="px-2 py-1 text-sm border rounded-md hover:bg-slate-100"
-              >
-                {showComments
-                  ? "Hide comments"
-                  : comments
-                    ? "Show comments"
-                    : "Add comment"}
-              </button>
-            </div>
-          </div>
-
-          {/* Conditionally render comments textarea */}
-          {showComments && (
-            <textarea
-              value={comments}
-              onChange={(e) => setComments(e.target.value)}
-              className="w-full min-h-[80px] border rounded-md px-3 py-2 text-base resize-vertical focus:outline-indigo-500"
-              placeholder="Add comments..."
+          ) : (
+            <StatusStepper
+              steps={subjectSteps}
+              currentKey={currentKey}
+              onStepClick={handleStepClick}
             />
           )}
+        </div>
 
-          {/* Files panel */}
-          <div className="mt-0 bg-slate-50 border rounded-md p-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <label className="text-base text-slate-600">Type</label>
-                <select
-                  value={fileType}
-                  onChange={(e) => setFileType(e.target.value)}
-                  className="border rounded-md px-2 py-1 text-sm bg-white"
+        {/* Header */}
+        <div className="flex items-start justify-between gap-6 mb-6">
+          <div>
+            <h3 className="text-4xl font-semibold text-slate-900">
+              Device — {device?.name || device?.text || device?.id}
+            </h3>
+            <div className="text-xl text-slate-500">{device.id}</div>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Left column */}
+          <div className="col-span-1 space-y-6">
+            <div>
+              <label className="block text-xl text-slate-500 mb-2">Name</label>
+              <div className="flex items-center gap-4">
+                {isEditingName ? (
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    autoFocus
+                    className="w-full border rounded-md px-4 py-3 text-2xl focus:outline-indigo-500"
+                  />
+                ) : (
+                  <div
+                    className="text-2xl font-medium text-slate-900 truncate"
+                    title={name || device?.text || ""}
+                  >
+                    {name || "-"}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setIsEditingName((s) => !s)}
+                  className="p-2 rounded-md hover:bg-slate-100"
+                  aria-pressed={isEditingName}
+                  title={isEditingName ? "Finish editing" : "Edit name"}
                 >
-                  <option value="panel_schedule">Panel schedule</option>
-                  <option value="test_report">Test report</option>
-                  <option value="other">Other</option>
-                </select>
+                  {isEditingName ? (
+                    <HiOutlineCheck className="w-7 h-7 text-green-600" />
+                  ) : (
+                    <HiOutlinePencilSquare className="w-7 h-7 text-slate-700" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xl text-slate-500 mb-2">
+                Will be energized
+              </label>
+              <DatePicker
+                selected={willAt}
+                onChange={(d) => setWillAt(d)}
+                dateFormat="yyyy-MM-dd"
+                isClearable
+                className="w-full border rounded-md px-4 py-3 text-2xl focus:outline-indigo-500 bg-white"
+                placeholderText="Select a date"
+              />
+            </div>
+
+            <div className="space-y-5">
+              {/* Energized row */}
+              <div className="flex items-center justify-between gap-6">
+                <div>
+                  <div
+                    className={`text-xl font-medium ${
+                      energized ? "text-indigo-700" : "text-slate-600"
+                    }`}
+                  >
+                    Energized
+                  </div>
+                  <div
+                    className={`text-lg ${
+                      energized ? "text-indigo-600" : "text-slate-500"
+                    }`}
+                  >
+                    {energized ? "Energized" : "De-energized"}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <Toggle
+                    checked={energized}
+                    onChange={(next) => setEnergized(next)}
+                    size="md"
+                    label="Toggle energized"
+                  />
+                </div>
+              </div>
+
+              {/* Energized Today row */}
+              <div className="flex items-center justify-between gap-6">
+                <div>
+                  <div
+                    className={`text-xl font-medium ${
+                      energized
+                        ? "text-slate-400"
+                        : energizedToday
+                          ? "text-indigo-700"
+                          : "text-slate-600"
+                    }`}
+                  >
+                    Energized today
+                  </div>
+                  <div
+                    className={`text-lg ${
+                      energized
+                        ? "text-slate-400"
+                        : energizedToday
+                          ? "text-indigo-600"
+                          : "text-slate-500"
+                    }`}
+                  >
+                    {energized
+                      ? "Already"
+                      : energizedToday
+                        ? "Energized Today"
+                        : "Not Energized"}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <Toggle
+                    checked={energized ? false : energizedToday}
+                    onChange={(next) => setEnergizedToday(next)}
+                    disabled={energized}
+                    size="md"
+                    label="Toggle energized today"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Middle + right column */}
+          <div className="col-span-1 md:col-span-2 space-y-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <label className="block text-xl text-slate-500 mb-2">
+                  Comments
+                </label>
+                <div className="text-lg text-slate-600">
+                  {showComments
+                    ? "Visible"
+                    : comments
+                      ? "Hidden"
+                      : "No comments"}
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
-                <input
-                  id="device-file-input"
-                  type="file"
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
-                <label
-                  htmlFor="device-file-input"
-                  className="inline-flex items-center px-3 py-1.5 border rounded-md cursor-pointer hover:bg-slate-100 text-sm"
+                <button
+                  type="button"
+                  onClick={() => setShowComments((s) => !s)}
+                  className="px-4 py-2 text-lg border rounded-md hover:bg-slate-100"
                 >
-                  Choose
-                </label>
-
-                <Button
-                  onClick={handleClickUpload}
-                  disabled={!selectedFile || uploadMutation.isPending}
-                >
-                  {uploadMutation.isPending ? "Uploading…" : "Upload"}
-                </Button>
+                  {showComments
+                    ? "Hide comments"
+                    : comments
+                      ? "Show comments"
+                      : "Add comment"}
+                </button>
               </div>
             </div>
 
-            <div className="mt-2 text-sm text-slate-600">
-              {selectedFile
-                ? selectedFile.name
-                : uploadingFile
-                  ? `Last uploaded: ${uploadingFile.name}`
-                  : "No file selected"}
-            </div>
+            {showComments && (
+              <textarea
+                value={comments}
+                onChange={(e) => setComments(e.target.value)}
+                className="w-full min-h-[140px] border rounded-md px-4 py-3 text-2xl resize-vertical focus:outline-indigo-500"
+                placeholder="Add comments..."
+              />
+            )}
 
-            <div className="mt-3">
-              {filesLoading && (
-                <div className="text-sm text-slate-500">Loading files…</div>
-              )}
-              {filesError && (
-                <div className="text-sm text-red-500">
-                  Failed to load files.
+            {/* Files panel */}
+            <div className="mt-0 bg-slate-50 border rounded-md p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <label className="text-xl text-slate-600">Type</label>
+                  <select
+                    value={fileType}
+                    onChange={(e) => setFileType(e.target.value)}
+                    className="border rounded-md px-3 py-2 text-lg bg-white"
+                  >
+                    <option value="panel_schedule">Panel schedule</option>
+                    <option value="test_report">Test report</option>
+                    <option value="other">Other</option>
+                  </select>
                 </div>
-              )}
 
-              {!filesLoading && files.length === 0 ? (
-                <div className="text-sm text-slate-500">
-                  No files uploaded for this device.
+                <div className="flex items-center gap-3">
+                  <input
+                    id="device-file-input"
+                    type="file"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                  <label
+                    htmlFor="device-file-input"
+                    className="inline-flex items-center px-4 py-2 border rounded-md cursor-pointer hover:bg-slate-100 text-lg"
+                  >
+                    Choose
+                  </label>
+
+                  <Button
+                    onClick={handleClickUpload}
+                    disabled={!selectedFile || uploadMutation.isPending}
+                  >
+                    {uploadMutation.isPending ? "Uploading…" : "Upload"}
+                  </Button>
                 </div>
-              ) : (
-                <ul className="divide-y mt-2 max-h-52 overflow-auto">
-                  {files.map((file) => {
-                    const isPreviewable =
-                      file.mime_type?.startsWith("image/") ||
-                      file.mime_type === "application/pdf";
-                    return (
-                      <li
-                        key={file.id}
-                        className="flex items-center justify-between py-2"
-                      >
-                        <div className="min-w-0">
-                          <div className="font-medium text-base truncate">
-                            {file.file_name}
-                          </div>
-                          <div className="text-sm text-slate-500">
-                            {file.file_type} ·{" "}
-                            {(file.file_size / 1024).toFixed(1)} KB
-                          </div>
-                        </div>
+              </div>
 
-                        <div className="flex items-center gap-2">
-                          {isPreviewable && (
+              <div className="mt-3 text-lg text-slate-600">
+                {selectedFile
+                  ? selectedFile.name
+                  : uploadingFile
+                    ? `Last uploaded: ${uploadingFile.name}`
+                    : "No file selected"}
+              </div>
+
+              <div className="mt-4">
+                {filesLoading && (
+                  <div className="text-lg text-slate-500">Loading files…</div>
+                )}
+                {filesError && (
+                  <div className="text-lg text-red-500">
+                    Failed to load files.
+                  </div>
+                )}
+
+                {!filesLoading && files.length === 0 ? (
+                  <div className="text-lg text-slate-500">
+                    No files uploaded for this device.
+                  </div>
+                ) : (
+                  <ul className="divide-y mt-3 max-h-64 overflow-auto">
+                    {files.map((file) => {
+                      const isPreviewable =
+                        file.mime_type?.startsWith("image/") ||
+                        file.mime_type === "application/pdf";
+                      return (
+                        <li
+                          key={file.id}
+                          className="flex items-center justify-between py-3 gap-4"
+                        >
+                          <div className="min-w-0">
+                            <div className="font-medium text-xl truncate">
+                              {file.file_name}
+                            </div>
+                            <div className="text-lg text-slate-500">
+                              {file.file_type} ·{" "}
+                              {(file.file_size / 1024).toFixed(1)} KB
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 shrink-0">
+                            {isPreviewable && (
+                              <button
+                                onClick={() => handlePreview(file)}
+                                className="p-2 rounded-md hover:bg-slate-100"
+                                aria-label={`Preview ${file.file_name}`}
+                              >
+                                <HiEye className="w-7 h-7 text-slate-700" />
+                              </button>
+                            )}
+
                             <button
-                              onClick={() => handlePreview(file)}
-                              className="p-1 rounded-md hover:bg-slate-100"
-                              aria-label={`Preview ${file.file_name}`}
+                              onClick={() => handleDownload(file)}
+                              className="p-2 rounded-md hover:bg-slate-100"
+                              aria-label={`Download ${file.file_name}`}
                             >
-                              <HiEye className="w-5 h-5 text-slate-700" />
+                              <HiDocumentArrowDown className="w-7 h-7 text-slate-700" />
                             </button>
-                          )}
-
-                          <button
-                            onClick={() => handleDownload(file)}
-                            className="p-1 rounded-md hover:bg-slate-100"
-                            aria-label={`Download ${file.file_name}`}
-                          >
-                            <HiDocumentArrowDown className="w-5 h-5 text-slate-700" />
-                          </button>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="mt-6 flex justify-end items-center gap-3">
+      {/* Actions 固定在底部 */}
+      <div className="pt-6 flex justify-end items-center gap-4 border-t">
+        {/* 你 Button 组件里 prop 名是 variation，不是 variant。
+           如果 secondary 没生效，把下面改成 variation="secondary" */}
         <Button variant="secondary" onClick={closeModal}>
           Cancel
         </Button>

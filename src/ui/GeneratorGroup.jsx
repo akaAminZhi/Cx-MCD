@@ -1,6 +1,3 @@
-/**
- * GeneratorGroup.jsx — 支持 x1, y1, x2, y2 的版本
- */
 import FlashIcon from "./FlashIcon";
 import PropTypes from "prop-types";
 
@@ -13,18 +10,17 @@ export default function GeneratorGroup({
   strokeWidth = 5,
   energized = false,
   name = "G1",
-  ...rest
+  onClick,
+  onMouseEnter,
+  onMouseLeave,
+  className = "",
 }) {
-  // 目标矩形宽高
   const targetW = Math.max(0, x2 - x1);
   const targetH = Math.max(0, y2 - y1);
 
-  // 原图的“基准包围盒”（根据路径和元素范围估算）
-  // x 范围约 32~260，y 范围约 8~200+
   const BASE = { minX: 32, minY: 8, width: 228 - 32, height: 200 };
 
-  // 按比例缩放并居中
-  const s = Math.min(targetW / BASE.width, targetH / BASE.height)*2;
+  const s = Math.min(targetW / BASE.width, targetH / BASE.height) * 2;
   const drawW = BASE.width * s;
   const drawH = BASE.height * s;
   const offsetX = x1 + (targetW - drawW) / 2;
@@ -32,80 +28,69 @@ export default function GeneratorGroup({
 
   return (
     <>
-    {/* 透明命中层 */}
-    <rect
-        x={x1}
-        y={y1}
-        width={targetW}
-        height={targetH}
-        fill="white"
-        fillOpacity="0"
-        pointerEvents="all"
-        style={{ cursor: "pointer" }}
-        onClick={rest.onClick}
-        onMouseEnter={rest.onMouseEnter}
-        onMouseLeave={rest.onMouseLeave}
-      />
-    <g
-      transform={`translate(${offsetX} ${offsetY}) scale(${s}) translate(${-BASE.minX} ${-BASE.minY})`}
-      stroke={stroke}
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={` ${energized ? "fill-yellow-300" : "fill-none"}`}
-      {...rest}
+      {/* 图形层：不抢事件 */}
+      <g
+        transform={`translate(${offsetX} ${offsetY}) scale(${s}) translate(${-BASE.minX} ${-BASE.minY})`}
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        pointerEvents="none"
+        className={`${energized ? "fill-yellow-300" : "fill-none"} ${className}`}
       >
-      {/* 闪电图标 */}
-      {energized && <FlashIcon x={130} y={-20} />}
+        {energized && <FlashIcon x={130} y={-20} />}
 
-      {/* 名称标签 */}
-      <text
-        x={130}
-        y={0}
-        textAnchor="middle"
-        fontSize="14"
-        fill="#333"
-        strokeWidth={1}
-        className="text-4xl"
+        <text
+          x={130}
+          y={0}
+          textAnchor="middle"
+          fontSize="14"
+          fill="#333"
+          strokeWidth={1}
+          className="text-4xl"
         >
-        {name}
-      </text>
+          {name}
+        </text>
 
-      {/* ── 机壳外框 ──────────────── */}
-      <path d="M32 48 H228 a16 16 0 0 1 16 16 V176 H72 a24 24 0 0 1 -24 -24 V48 Z" />
+        <path d="M32 48 H228 a16 16 0 0 1 16 16 V176 H72 a24 24 0 0 1 -24 -24 V48 Z" />
+        <path d="M32 48 V32 H228 V48" />
+        <rect x="168" y="8" width="44" height="24" rx="4" />
 
-      {/* ── 顶部把手 ──────────────── */}
-      <path d="M32 48 V32 H228 V48" />
-      <rect x="168" y="8" width="44" height="24" rx="4" />
+        <rect x="92" y="76" width="68" height="32" rx="4" />
+        <circle cx="186" cy="92" r="12" />
+        <circle cx="218" cy="92" r="12" />
 
-      {/* ── 操作面板 ──────────────── */}
-      <rect x="92" y="76" width="68" height="32" rx="4" />
-      <circle cx="186" cy="92" r="12" />
-      <circle cx="218" cy="92" r="12" />
+        <line x1="105" y1="132" x2="228" y2="132" />
+        <circle cx="244" cy="132" r="4" />
 
-      {/* ── 分隔线 + 指示灯 ───────── */}
-      <line x1="105" y1="132" x2="228" y2="132" />
-      <circle cx="244" cy="132" r="4" />
-
-      {/* ── 闪电符号 (新版) ───────── */}
-      <polyline
-        transform={"translate(-20 0)"}
-        points="72 132 104 92 104 120 132 120 104 158 104 132 72 132"
+        <polyline
+          transform="translate(-20 0)"
+          points="72 132 104 92 104 120 132 120 104 158 104 132 72 132"
         />
 
-      {/* ── 散热栅 ──────────────── */}
-      {[148, 164, 170].map((yPos) => (
-        <line key={yPos} x1="108" y1={yPos} x2="172" y2={yPos} />
-      ))}
+        {[148, 164, 170].map((yPos) => (
+          <line key={yPos} x1="108" y1={yPos} x2="172" y2={yPos} />
+        ))}
 
-      {/* ── 底座脚 ──────────────── */}
-      <rect x="72" y="176" width="56" height="24" rx="4" />
+        <rect x="72" y="176" width="56" height="24" rx="4" />
+        <circle cx="228" cy="176" r="36" />
+        <circle cx="228" cy="176" r="14" />
+      </g>
 
-      {/* ── 车轮 ──────────────── */}
-      <circle cx="228" cy="176" r="36" />
-      <circle cx="228" cy="176" r="14" />
-    </g>
-</>
+      {/* 命中层：放最后，保证在最上面吃事件 */}
+      <rect
+        x={x1}
+        y={y1}
+        width={targetW + 20}
+        height={targetH + 20}
+        fill="transparent" // 用 transparent 更直观
+        pointerEvents="all"
+        style={{ cursor: "pointer" }}
+        onClick={onClick}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+      />
+    </>
   );
 }
 
@@ -118,4 +103,8 @@ GeneratorGroup.propTypes = {
   x2: PropTypes.number.isRequired,
   y2: PropTypes.number.isRequired,
   energized: PropTypes.bool,
+  onClick: PropTypes.func,
+  onMouseEnter: PropTypes.func,
+  onMouseLeave: PropTypes.func,
+  className: PropTypes.string,
 };

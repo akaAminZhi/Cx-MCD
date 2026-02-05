@@ -12,7 +12,12 @@ export function useDeviceFiles(deviceId) {
     queryKey: ["deviceFiles", deviceId],
     queryFn: () => fetchDeviceFiles(deviceId),
     enabled: !!deviceId,
-    staleTime: 5 * 60 * 1000, // 5 min
-    cacheTime: 5 * 60 * 1000,
+
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000, // ✅ v5：gcTime（建议给更长，避免频繁回收）
+
+    refetchOnMount: false, // ✅ 卡片卸载/挂载时别自动 refetch
+    refetchOnWindowFocus: false, // ✅ 切回窗口别抖
+    refetchOnReconnect: false,
   });
 }

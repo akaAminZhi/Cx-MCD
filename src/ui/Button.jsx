@@ -4,6 +4,7 @@ function Button({
   size = "medium",
   variation = "primary",
   selected = false,
+  className = "",
   children,
   ...props
 }) {
@@ -34,6 +35,7 @@ function Button({
           ${sizes[size]}
           ${variations[variation]}
            ${selected ? selectedVariations[variation] : ""}
+           ${className}
           `}
       {...props}
     >

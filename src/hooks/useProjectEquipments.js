@@ -24,6 +24,8 @@ async function fetchProjectEquipments({ queryKey }) {
  * @param {string} projectId - 项目 ID，比如 "lsb"
  * @param {{ page?: number, size?: number, enabled?: boolean }} options
  */
+import { keepPreviousData } from "@tanstack/react-query";
+
 export function useProjectEquipments(projectId, options = {}) {
   const { page, size, enabled = true } = options;
 
@@ -31,7 +33,6 @@ export function useProjectEquipments(projectId, options = {}) {
     Number.isInteger(page) && page > 0 && Number.isInteger(size) && size > 0;
 
   return useQuery({
-    // 把分页参数放进 queryKey，这样换页会自动请求新数据
     queryKey: [
       "projectEquipments",
       projectId,
@@ -39,8 +40,10 @@ export function useProjectEquipments(projectId, options = {}) {
     ],
     queryFn: fetchProjectEquipments,
     enabled: !!projectId && enabled,
+
     staleTime: 5 * 60 * 1000,
-    cacheTime: 5 * 60 * 1000,
-    keepPreviousData: hasPagination, // 分页时切页更平滑
+    gcTime: 30 * 60 * 1000,
+
+    placeholderData: hasPagination ? keepPreviousData : undefined, // ✅ v5
   });
 }

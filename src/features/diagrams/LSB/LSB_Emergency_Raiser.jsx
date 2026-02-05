@@ -83,7 +83,7 @@ function LSB_Emergency_Raiser({
         case "Level Line":
           level_line.push(item);
           break;
-        case "generator":
+        case "Generator":
           generator.push(item);
           break;
         case "Wall":
@@ -214,6 +214,9 @@ function LSB_Emergency_Raiser({
           y1={item.rect_px[1]}
           x2={item.rect_px[2]}
           y2={item.rect_px[3]}
+          energized={item.energized}
+          energizedToday={item.energized_today}
+          onClick={() => onNodeClick?.(item)}
         />
       ))}
       {room_line.map((item) => (

@@ -69,7 +69,7 @@ function Window({ children, name, size = "xl" }) {
         return "w-[min(88vw,56rem)] max-h-[86vh]";
       case "xl":
         // 更大：接近全屏，不滚动
-        return "w-[min(96vw,90rem)] max-h-[90vh]";
+        return "w-[min(92vw,96rem)] max-h-[94vh]";
       case "lg":
       default:
         // 默认比你原来大很多：不滚动
@@ -77,10 +77,14 @@ function Window({ children, name, size = "xl" }) {
     }
   }, [size]);
 
-  const styleModal = `fixed z-[1001] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-     rounded-xl shadow-2xl bg-white
-     ${sizeClass} overflow-hidden
-     p-6 transition-all duration-300 `;
+  const styleModal = `
+fixed z-[1001]
+top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+rounded-xl shadow-2xl bg-white
+${sizeClass}
+overflow-hidden
+transition-all duration-300
+`;
 
   const overlay =
     "fixed z-[1000] inset-0 bg-black/30 backdrop-blur-[2px] transition-opacity";
@@ -96,7 +100,7 @@ function Window({ children, name, size = "xl" }) {
     <div className={overlay} role="presentation">
       <div className={styleModal} ref={ref} role="dialog" aria-modal="true">
         {/* 右上角关闭按钮（悬浮不占布局） */}
-        <Button onClick={close}>
+        <Button onClick={close} className="absolute right-4 top-4">
           <HiXMark />
         </Button>
 
