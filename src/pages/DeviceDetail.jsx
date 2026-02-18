@@ -10,6 +10,7 @@ import {
   HiDocumentArrowDown,
   HiEye,
   HiArrowPath,
+  HiOutlineCheck,
 } from "react-icons/hi2";
 import { PiPlugsConnectedBold } from "react-icons/pi";
 import { format, formatDistanceToNow } from "date-fns";
@@ -20,8 +21,174 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import useDevice from "../hooks/useDevice";
 import { useDeviceFiles } from "../hooks/useDeviceFiles";
+import { useSubjectSteps } from "../hooks/useSubjectSteps";
 import Spinner from "../ui/Spinner";
 import Heading from "../ui/Heading";
+
+function StatusStepper({ steps = [], currentKey }) {
+  const count = steps.length || 1;
+  const rawIndex = steps.findIndex((step) => step.key === currentKey);
+  const currentIndex = rawIndex >= 0 ? rawIndex : 0;
+
+  return (
+    <div className="w-full overflow-x-auto overflow-y-visible py-2">
+      <style>{`
+        @keyframes detailDashFlow {
+          0% { stroke-dashoffset: 0; }
+          100% { stroke-dashoffset: -16; }
+        }
+        @keyframes detailGlowPulseLine {
+          0%, 100% { opacity: .16; filter: drop-shadow(0 0 0 rgba(79,70,229,0)); }
+          50%      { opacity: .30; filter: drop-shadow(0 0 6px rgba(79,70,229,.28)); }
+        }
+        @keyframes detailDotGlow {
+          0%, 100% {
+            box-shadow:
+              0 0 0 0 rgba(99,102,241,0.00),
+              0 0 0 0 rgba(99,102,241,0.00);
+          }
+          50% {
+            box-shadow:
+              0 0 0 8px rgba(99,102,241,0.16),
+              0 0 18px 2px rgba(99,102,241,0.24);
+          }
+        }
+      `}</style>
+
+      <div
+        className="grid items-start gap-x-6 px-1"
+        style={{ gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))` }}
+      >
+        {steps.map((step, index) => {
+          const isCompleted = index < currentIndex;
+          const isCurrent = index === currentIndex;
+          const hasNext = index < count - 1;
+
+          const dotClass = isCompleted
+            ? "bg-indigo-600 text-white"
+            : isCurrent
+              ? "bg-indigo-600 text-white"
+              : "bg-slate-200 text-slate-600";
+
+          const textClass = isCompleted
+            ? "text-indigo-600"
+            : isCurrent
+              ? "text-indigo-700 font-semibold"
+              : "text-slate-600";
+
+          const segmentState =
+            index < currentIndex
+              ? "completed"
+              : index === currentIndex
+                ? "current"
+                : "upcoming";
+
+          return (
+            <div key={`${step.key}-${index}`} className="flex flex-col items-center">
+              <div className="relative w-full flex items-center justify-center py-3">
+                {hasNext && (
+                  <svg
+                    className="absolute left-1/2 top-1/2 w-full h-10 -translate-y-1/2 pointer-events-none"
+                    viewBox="0 0 100 24"
+                    preserveAspectRatio="none"
+                    aria-hidden
+                  >
+                    {segmentState === "completed" && (
+                      <g className="text-indigo-600">
+                        <line
+                          x1="10"
+                          y1="12"
+                          x2="95"
+                          y2="12"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                        />
+                      </g>
+                    )}
+
+                    {segmentState === "current" && (
+                      <g className="text-indigo-600">
+                        <line
+                          x1="10"
+                          y1="12"
+                          x2="95"
+                          y2="12"
+                          stroke="currentColor"
+                          strokeWidth="7"
+                          strokeLinecap="round"
+                          style={{
+                            animation: "detailGlowPulseLine 1.8s ease-in-out infinite",
+                          }}
+                          opacity="0.22"
+                        />
+                        <line
+                          x1="10"
+                          y1="12"
+                          x2="95"
+                          y2="12"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          opacity="0.18"
+                        />
+                        <line
+                          x1="10"
+                          y1="12"
+                          x2="95"
+                          y2="12"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeDasharray="6 6"
+                          style={{ animation: "detailDashFlow 1.05s linear infinite" }}
+                        />
+                      </g>
+                    )}
+
+                    {segmentState === "upcoming" && (
+                      <g className="text-slate-300">
+                        <line
+                          x1="10"
+                          y1="12"
+                          x2="95"
+                          y2="12"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                        />
+                      </g>
+                    )}
+                  </svg>
+                )}
+
+                <div
+                  className={`relative z-10 flex items-center justify-center w-11 h-11 rounded-full text-xl font-semibold transition-colors ${dotClass}`}
+                  aria-current={isCurrent ? "step" : undefined}
+                  style={
+                    isCurrent
+                      ? {
+                          animation: "detailDotGlow 1.8s ease-in-out infinite",
+                          transform: "scale(1.04)",
+                          transition: "transform 200ms ease",
+                        }
+                      : undefined
+                  }
+                >
+                  {isCompleted ? <HiOutlineCheck className="w-5 h-5" /> : index + 1}
+                </div>
+              </div>
+
+              <div className={`mt-1 text-base md:text-lg text-center leading-snug max-w-[180px] ${textClass}`}>
+                {step.label}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function getFilePageMeta(device) {
   if (device.project === "lsb") {
@@ -95,6 +262,12 @@ function DeviceDetail() {
     error: filesError,
   } = useDeviceFiles(deviceId);
 
+  const {
+    data: stepsResp,
+    isLoading: stepsLoading,
+    isError: stepsError,
+  } = useSubjectSteps(device?.subject || subject);
+
   const [text, setText] = useState("");
   const [subject, setSubject] = useState("");
   const [comments, setComments] = useState("");
@@ -144,6 +317,14 @@ function DeviceDetail() {
 
   const files = filesData?.data ?? [];
   const fileCount = filesData?.count ?? files.length;
+  const subjectSteps = stepsResp?.data ?? [];
+  const currentKey = device?.current_status || subjectSteps?.[0]?.key || "";
+  const currentStepIndex = subjectSteps.findIndex((step) => step.key === currentKey);
+  const currentStepNumber = subjectSteps.length
+    ? currentStepIndex >= 0
+      ? currentStepIndex + 1
+      : 1
+    : 0;
 
   const meta = useMemo(
     () => (device ? getFilePageMeta(device) : null),
@@ -247,6 +428,29 @@ function DeviceDetail() {
           device.energized ? " border-rose-300" : "border-indigo-100"
         }`}
       >
+        <div className="rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50 to-white p-6">
+          <div className="flex items-center justify-between gap-4 mb-3">
+            <h3 className="text-xl font-semibold text-slate-800">Status steps</h3>
+            <span className="text-base text-slate-500">
+              {subjectSteps.length > 0
+                ? `${currentStepNumber}/${subjectSteps.length}`
+                : "-"}
+            </span>
+          </div>
+
+          {stepsLoading ? (
+            <div className="text-base text-slate-500">Loading steps…</div>
+          ) : stepsError ? (
+            <div className="text-base text-rose-600">Failed to load steps.</div>
+          ) : subjectSteps.length === 0 ? (
+            <div className="text-base text-slate-500">
+              No steps configured for subject: {device.subject || "-"}
+            </div>
+          ) : (
+            <StatusStepper steps={subjectSteps} currentKey={currentKey} />
+          )}
+        </div>
+
         <div className="flex flex-wrap justify-between gap-6 items-start">
           <div className="space-y-2">
             <Heading Tag="h1" className="text-4xl font-bold text-slate-900">
