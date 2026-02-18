@@ -1,42 +1,59 @@
 // api/useProjectEquipments.js
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import axios from "axios";
 
-// 真正请求数据的函数
+/**
+ * queryKey: ["projectEquipments", projectId, params]
+ * params: { page, size, q, pageFilter, energized, subject }
+ */
 async function fetchProjectEquipments({ queryKey }) {
   const [_key, projectId, params] = queryKey;
 
   const res = await axios.get(`/api/v1/projects/${projectId}/equipments`, {
-    // 如果有 page/size 就带上，没有就让后端返回全部
-    params:
-      params && params.page && params.size
-        ? {
-            page: params.page,
-            size: params.size,
-          }
-        : undefined,
+    params: {
+      // pagination (always send; server expects it for paged data)
+      page: params?.page ?? 1,
+      size: params?.size ?? 9,
+
+      // filters
+      q: params?.q ?? "",
+      pageFilter: params?.pageFilter ?? "all",
+      energized: params?.energized ?? "all",
+      subject: params?.subject ?? "all",
+    },
   });
 
-  return res.data; // { project, data: [...], pagination? }
+  return res.data;
 }
 
 /**
- * @param {string} projectId - 项目 ID，比如 "lsb"
- * @param {{ page?: number, size?: number, enabled?: boolean }} options
+ * @param {string} projectId
+ * @param {{
+ *  page?: number,
+ *  size?: number,
+ *  q?: string,
+ *  pageFilter?: "all"|"normal"|"emergency",
+ *  energized?: "all"|"on"|"off",
+ *  subject?: string,
+ *  enabled?: boolean
+ * }} options
  */
-import { keepPreviousData } from "@tanstack/react-query";
-
 export function useProjectEquipments(projectId, options = {}) {
-  const { page, size, enabled = true } = options;
-
-  const hasPagination =
-    Number.isInteger(page) && page > 0 && Number.isInteger(size) && size > 0;
+  const {
+    page = 1,
+    size = 9,
+    q = "",
+    pageFilter = "all",
+    energized = "all",
+    subject = "all",
+    enabled = true,
+  } = options;
 
   return useQuery({
     queryKey: [
       "projectEquipments",
       projectId,
-      hasPagination ? { page, size } : null,
+      { page, size, q, pageFilter, energized, subject },
     ],
     queryFn: fetchProjectEquipments,
     enabled: !!projectId && enabled,
@@ -44,6 +61,8 @@ export function useProjectEquipments(projectId, options = {}) {
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
 
-    placeholderData: hasPagination ? keepPreviousData : undefined, // ✅ v5
+    placeholderData: keepPreviousData, // v5: smooth paging/filter changes
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }

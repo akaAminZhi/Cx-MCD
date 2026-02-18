@@ -10,18 +10,13 @@ import {
   HiOutlineDocumentText,
   HiOutlineMapPin,
 } from "react-icons/hi2";
-import { format, formatDistanceToNow, isAfter, subHours } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { useLocation, useNavigate, useSearchParams } from "react-router";
 import Heading from "../../ui/Heading";
 import { useProjectEquipments } from "../../hooks/useProjectEquipments";
 import Spinner from "../../ui/Spinner";
-// import { useDeviceFiles } from "../../hooks/useDeviceFiles";
-// import Modal, { useModal } from "../../ui/Modal";
 
 // ======================================================
-// 🔧 Unified Typography Scale
-// ======================================================
-
 // helper: status meta
 function getFilePageMeta(device) {
   if (device.project === "lsb") {
@@ -46,8 +41,7 @@ function getFilePageMeta(device) {
 }
 
 // ======================================================
-// Summary Card Component (Revised Typography)
-// ======================================================
+// Summary Card
 function SummaryCard({ title, value, icon, tone }) {
   return (
     <div
@@ -57,11 +51,9 @@ function SummaryCard({ title, value, icon, tone }) {
         {icon}
       </div>
       <div>
-        {/* text-base -> text-lg */}
         <p className="text-slate-500 text-lg uppercase tracking-[0.15em]">
           {title}
         </p>
-        {/* text-4xl -> text-5xl */}
         <p className="text-5xl font-semibold text-slate-900 mt-1">{value}</p>
       </div>
     </div>
@@ -69,8 +61,7 @@ function SummaryCard({ title, value, icon, tone }) {
 }
 
 // ======================================================
-// DeviceCard Component (Unified Typography)
-// ======================================================
+// DeviceCard
 function DeviceCard({ device }) {
   const meta = getFilePageMeta(device);
 
@@ -81,14 +72,6 @@ function DeviceCard({ device }) {
   const scheduled = device.will_energized_at
     ? format(new Date(device.will_energized_at), "MMM d, HH:mm")
     : null;
-
-  // const {
-  //   data: filesData,
-  //   isLoading: isFilesLoading,
-  //   error: filesError,
-  // } = useDeviceFiles(device.id);
-
-  // const fileCount = filesError ? "?" : (filesData?.count ?? 0);
 
   const baseCardClasses = `
     group relative border rounded-2xl bg-white p-6 shadow-sm flex flex-col gap-5 overflow-hidden
@@ -116,22 +99,18 @@ function DeviceCard({ device }) {
 
       <header className="flex justify-between gap-4">
         <div>
-          {/* text-sm -> text-base */}
           <p className="text-base uppercase text-slate-400 tracking-wide">
             {device.project}
           </p>
-          {/* text-2xl -> text-3xl */}
           <h3 className="text-3xl font-semibold text-slate-900 mt-1">
             {device.text}
           </h3>
-          {/* text-base -> text-lg */}
           <p className="text-lg text-slate-600 mt-1 line-clamp-2">
             {device.subject}
           </p>
         </div>
 
         <div className="flex flex-col items-end gap-2.5">
-          {/* text-base -> text-lg */}
           <span
             className={`inline-flex items-center gap-2 text-lg border px-3 py-1.5 rounded-full ${meta.tone}`}
           >
@@ -139,7 +118,6 @@ function DeviceCard({ device }) {
             {meta.label}
           </span>
 
-          {/* text-base -> text-lg */}
           <span
             className={`inline-flex items-center gap-2 text-lg px-3 py-1.5 rounded-full border ${
               device.energized
@@ -152,11 +130,9 @@ function DeviceCard({ device }) {
             ) : (
               <HiBoltSlash className="w-5 h-5" />
             )}
-
             {device.energized ? "Energized" : "Not energized"}
           </span>
 
-          {/* text-sm -> text-base */}
           {device.energized_today && (
             <span className="text-base bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-2 py-1 inline-flex items-center gap-1">
               <HiMiniArrowTrendingUp className="w-4 h-4" /> Today active
@@ -165,7 +141,6 @@ function DeviceCard({ device }) {
         </div>
       </header>
 
-      {/* text-base -> text-lg */}
       <div className="grid grid-cols-2 gap-3 text-lg text-slate-700">
         <div className="flex items-center gap-2">
           <HiOutlineMapPin className="w-5 h-5 text-indigo-500" />
@@ -190,7 +165,6 @@ function DeviceCard({ device }) {
         </div>
       </div>
 
-      {/* text-sm -> text-base */}
       <div className="flex flex-wrap gap-2 text-base text-slate-600">
         <span className="px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-full">
           Updated {updatedAgo}
@@ -209,31 +183,35 @@ function DeviceCard({ device }) {
 }
 
 // ======================================================
-// MAIN DASHBOARD PAGE (Unified Typography)
-// ======================================================
+// MAIN DASHBOARD PAGE
 function LSB_Dashboard_Page() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  // 从 query params 初始化 state（保持原来的默认值作为回退）
+
+  const projectId = "lsb";
+
+  // read from url (initial)
   const initialSearch = searchParams.get("q") ?? "";
   const initialPageFilter = searchParams.get("pageFilter") ?? "all";
   const initialEnergizedFilter = searchParams.get("energized") ?? "all";
   const initialSubjectFilter = searchParams.get("subject") ?? "all";
   const initialPage = parseInt(searchParams.get("page") ?? "1", 10);
 
+  const [searchTerm, setSearchTerm] = useState(initialSearch);
   const [pageFilter, setPageFilter] = useState(initialPageFilter);
   const [energizedFilter, setEnergizedFilter] = useState(
     initialEnergizedFilter
   );
-  const [searchTerm, setSearchTerm] = useState(initialSearch);
-  const [page, setPage] = useState(initialPage);
   const [subjectFilter, setSubjectFilter] = useState(initialSubjectFilter);
+  const [page, setPage] = useState(
+    Number.isFinite(initialPage) && initialPage > 0 ? initialPage : 1
+  );
+
+  // UI page size and server size kept same for simplicity
   const pageSize = 9;
-  //   const { open } = useModal();
-  const projectId = "lsb";
 
-  const navigate = useNavigate();
-
+  // debounce update url params
   useEffect(() => {
     const t = setTimeout(() => {
       const params = {};
@@ -258,110 +236,72 @@ function LSB_Dashboard_Page() {
     page,
     setSearchParams,
   ]);
-  const { data, isLoading, error } = useProjectEquipments(projectId);
-  const Equipement = data?.data ?? [];
 
-  const subjectOptions = useMemo(() => {
-    const set = new Set();
-    for (const d of Equipement) {
-      const s = (d.subject ?? "").trim();
-      if (s) set.add(s);
-    }
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [Equipement]);
-  // ===== filtering logic =====
-  const filteredAll = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
+  // ✅ fetch from server with filters + paging
+  const { data, isLoading, error } = useProjectEquipments(projectId, {
+    page,
+    size: pageSize,
+    q: searchTerm,
+    pageFilter,
+    energized: energizedFilter,
+    subject: subjectFilter,
+  });
 
-    return Equipement.filter((device) => {
-      // page filter
-      if (
-        pageFilter === "normal" &&
-        !(device.project === "lsb" && device.file_page === 1)
-      )
-        return false;
+  const equipments = data?.data ?? [];
 
-      if (
-        pageFilter === "emergency" &&
-        !(device.project === "lsb" && device.file_page === 2)
-      )
-        return false;
-
-      // energized filter
-      if (energizedFilter === "on" && !device.energized) return false;
-      if (energizedFilter === "off" && device.energized) return false;
-
-      // ✅ subject filter (must be BEFORE early-return)
-      if (subjectFilter !== "all") {
-        const subj = (device.subject ?? "").trim();
-        if (subj !== subjectFilter) return false;
-      }
-
-      // search term
-      if (!term) return true;
-
-      const id = (device.id ?? "").toLowerCase();
-      const subject = (device.subject ?? "").toLowerCase();
-      const text = (device.text ?? "").toLowerCase();
-
-      return id.includes(term) || subject.includes(term) || text.includes(term);
-    });
-  }, [Equipement, pageFilter, energizedFilter, subjectFilter, searchTerm]);
-
-  const totalCount = filteredAll.length;
+  // totals from server
+  const totalCount = data?.pagination?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
+  // keep page in range
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
 
-  const pagedDevices = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return filteredAll.slice(start, start + pageSize);
-  }, [filteredAll, page]);
+  // ✅ summary from server (overall, not filtered)
+  const summary = data?.summary ?? {
+    total: 0,
+    energized: 0,
+    today: 0,
+    normal: 0,
+    emergency: 0,
+    upcoming: 0,
+  };
 
-  // ===== summary =====
-  const summary = useMemo(() => {
-    return {
-      total: Equipement.length,
-      energized: Equipement.filter((d) => d.energized).length,
-      today: Equipement.filter((d) => d.energized_today).length,
-      normal: Equipement.filter((d) => d.file_page === 1).length,
-      emergency: Equipement.filter((d) => d.file_page === 2).length,
-      upcoming: Equipement.filter(
-        (d) =>
-          d.will_energized_at &&
-          isAfter(new Date(d.will_energized_at), subHours(new Date(), 1))
-      ).length,
-    };
-  }, [Equipement]);
+  // subject options: temporary (current page only)
+  const subjectOptions = useMemo(() => {
+    // 优先用后端返回的 subject_options（完整）
+    const fromServer = data?.subject_options;
+    if (Array.isArray(fromServer) && fromServer.length > 0) return fromServer;
+
+    // fallback：当前页内的 subjects（不完整）
+    const set = new Set();
+    for (const d of equipments) {
+      const s = (d.subject ?? "").trim();
+      if (s) set.add(s);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [data, equipments]);
 
   const isInitialLoading = isLoading && !data;
   if (isInitialLoading) return <Spinner />;
 
   if (error)
     return (
-      // text-xl -> text-2xl
       <div className="text-red-600 text-2xl p-10">
         Failed to load: {error.message}
       </div>
     );
 
-  // ==================================================
-  // MAIN RENDER
-  // ==================================================
   return (
-    // text-lg -> text-xl（整体再加一点）
     <div className="flex flex-col gap-10 text-xl pb-16">
-      {/* Page Title */}
       <header>
-        {/* text-4xl -> text-5xl */}
         <Heading Tag="h1" className="text-5xl font-bold text-slate-900">
           Device Dashboard
         </Heading>
       </header>
 
-      {/* Summary Cards */}
+      {/* Summary Cards (overall) */}
       <section className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <SummaryCard
           title="Total Devices"
@@ -403,7 +343,6 @@ function LSB_Dashboard_Page() {
 
       {/* FILTER + SEARCH + PAGINATION */}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col gap-5">
-        {/* TOP FILTERS */}
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap gap-4 items-center">
             {/* SEARCH */}
@@ -466,9 +405,9 @@ function LSB_Dashboard_Page() {
                 setPage(1);
               }}
               className="
-    border rounded-xl px-4 py-2 text-xl
-    focus:outline focus:outline-2 focus:outline-indigo-500
-  "
+                border rounded-xl px-4 py-2 text-xl
+                focus:outline focus:outline-2 focus:outline-indigo-500
+              "
             >
               <option value="all">All subjects</option>
               {subjectOptions
@@ -482,7 +421,6 @@ function LSB_Dashboard_Page() {
           </div>
 
           {/* HINT CHIPS */}
-          {/* text-sm -> text-base */}
           <div className="flex flex-wrap gap-3 text-base">
             <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
               LSB Page 1 → Normal
@@ -497,11 +435,10 @@ function LSB_Dashboard_Page() {
         </div>
 
         {/* PAGINATION */}
-        {/* text-lg -> text-xl */}
         <div className="flex items-center justify-between text-xl text-slate-600">
           <p>
             Showing{" "}
-            <strong className="text-slate-900">{pagedDevices.length}</strong> of{" "}
+            <strong className="text-slate-900">{equipments.length}</strong> of{" "}
             {totalCount} matched devices (project total {summary.total})
           </p>
 
@@ -529,7 +466,7 @@ function LSB_Dashboard_Page() {
 
       {/* DEVICE GRID */}
       <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {pagedDevices.map((device) => (
+        {equipments.map((device) => (
           <button
             key={device.id}
             className="text-left"
@@ -543,24 +480,12 @@ function LSB_Dashboard_Page() {
           </button>
         ))}
 
-        {pagedDevices.length === 0 && (
-          // text-xl -> text-2xl
+        {equipments.length === 0 && (
           <div className="border border-dashed border-slate-300 rounded-2xl p-16 text-center text-slate-500 bg-white text-2xl">
             No devices match current filters.
           </div>
         )}
       </section>
-
-      {/* EDIT MODAL */}
-      {/* <Modal.Window name="device-editor" size="xl">
-        {({ closeModal }) => (
-          <DeviceEditor
-            device={activeDevice}
-            projectId={projectId}
-            closeModal={closeModal}
-          />
-        )}
-      </Modal.Window> */}
     </div>
   );
 }
