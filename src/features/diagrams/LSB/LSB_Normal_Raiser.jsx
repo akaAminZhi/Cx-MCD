@@ -188,6 +188,19 @@ function LSB_Normal_Raiser({
           energized={item.energized}
           energizedToday={item.energized_today}
           onClick={() => onNodeClick?.(item)}
+          onMouseEnter={(e) =>
+            onNodeEnter?.(e, {
+              ...item,
+              tooltip: `${item.text} • ${item.current_status}`,
+            })
+          }
+          onMouseMove={(e) =>
+            onNodeMove?.(e, {
+              ...item,
+              tooltip: `${item.text} • ${item.current_status}`,
+            })
+          }
+          onMouseLeave={() => onNodeLeave?.()}
         />
       ))}
 

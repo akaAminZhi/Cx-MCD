@@ -65,7 +65,10 @@ function Transformer({
         style={{ cursor: "pointer" }}
         // 事件写这里
         onClick={rest.onClick}
+        // onMouseEnter={rest.onMouseEnter}
+        // onMouseLeave={rest.onMouseLeave}
         onMouseEnter={rest.onMouseEnter}
+        onMouseMove={rest.onMouseMove}
         onMouseLeave={rest.onMouseLeave}
       />
       <g

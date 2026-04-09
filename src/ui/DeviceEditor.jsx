@@ -257,7 +257,6 @@ export default function DeviceEditor({ device, projectId, closeModal }) {
   const subjectSteps = stepsResp?.data ?? [];
 
   const currentKey = device?.current_status || subjectSteps?.[0]?.key || "";
-
   const mutation = useMutation({
     mutationFn: async ({ id, payload }) => {
       const res = await axios.put(`/api/v1/devices/${id}`, payload);
