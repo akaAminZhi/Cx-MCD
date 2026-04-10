@@ -401,11 +401,17 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
       </div>
 
       {showSchedulePanel && (
-        <div className="absolute z-20 left-2 top-16 w-[720px] bg-white rounded-lg shadow-xl border border-slate-200 p-5">
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-semibold text-slate-800">
-              Energize Schedule
-            </h4>
+        <div className="absolute z-20 left-2 top-16 w-[780px] rounded-2xl border border-indigo-100 bg-gradient-to-br from-white via-indigo-50/40 to-purple-50/50 shadow-2xl p-5 backdrop-blur">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <h4 className="text-lg font-semibold text-slate-900">
+                Energize Schedule
+              </h4>
+              <p className="text-xs text-slate-500">
+                Explore planned energize dates and paint devices directly on the
+                LSB diagram.
+              </p>
+            </div>
             <div className="flex items-center gap-2">
               <Button
                 onClick={() => {
@@ -419,7 +425,7 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
               </Button>
               <button
                 type="button"
-                className="text-xs text-slate-500 hover:text-slate-700"
+                className="rounded-md px-2 py-1 text-xs text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
                 onClick={() => setShowSchedulePanel(false)}
               >
                 Close
@@ -427,36 +433,63 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
             </div>
           </div>
 
-          <div className="space-y-2 mb-3">
-            <label className="block text-xs text-slate-600">
-              View mode
-              <select
-                className="mt-1 w-full border border-slate-300 rounded px-3 py-2 text-base"
-                value={scheduleViewMode}
-                onChange={(e) => setScheduleViewMode(e.target.value)}
-              >
-                <option value="none">Off</option>
-                <option value="date">Selected date → energizedToday color</option>
-                <option value="all">All scheduled dates heatmap</option>
-              </select>
-            </label>
+          <div className="mb-4 grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-indigo-100 bg-white/90 p-3">
+              <div className="text-xs font-semibold text-slate-600 mb-2">
+                View mode
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                {[
+                  { value: "none", label: "Off" },
+                  { value: "date", label: "Selected day" },
+                  { value: "all", label: "All heatmap" },
+                ].map((mode) => (
+                  <button
+                    key={mode.value}
+                    type="button"
+                    onClick={() => setScheduleViewMode(mode.value)}
+                    className={`rounded-lg border px-2 py-2 font-medium transition ${
+                      scheduleViewMode === mode.value
+                        ? "border-indigo-500 bg-indigo-600 text-white shadow"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:text-indigo-700"
+                    }`}
+                  >
+                    {mode.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-            <div className="block text-xs text-slate-600">
-              <div>Month</div>
-              <div className="mt-1 flex items-center gap-2">
-                <Button onClick={() => shiftCalendarMonth(-1)}>◀ Prev</Button>
+            <div className="rounded-xl border border-indigo-100 bg-white/90 p-3">
+              <div className="text-xs font-semibold text-slate-600 mb-2">
+                Month
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => shiftCalendarMonth(-1)}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-indigo-300 hover:text-indigo-700"
+                >
+                  ◀ Prev
+                </button>
                 <input
                   type="month"
-                  className="w-full border border-slate-300 rounded px-3 py-2 text-base"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
                   value={calendarMonth}
                   onChange={(e) => setCalendarMonth(e.target.value)}
                 />
-                <Button onClick={() => shiftCalendarMonth(1)}>Next ▶</Button>
+                <button
+                  type="button"
+                  onClick={() => shiftCalendarMonth(1)}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-indigo-300 hover:text-indigo-700"
+                >
+                  Next ▶
+                </button>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-7 gap-2 text-sm text-slate-500 mb-2">
+          <div className="grid grid-cols-7 gap-2 text-sm font-medium text-slate-500 mb-2">
             {["S", "M", "T", "W", "T", "F", "S"].map((d, idx) => (
               <div key={`${d}-${idx}`} className="text-center">
                 {d}
@@ -475,10 +508,10 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
                   setSelectedScheduleDate(dayItem.key);
                   setScheduleViewMode("date");
                 }}
-                className={`h-16 rounded text-sm font-medium border ${
+                className={`h-16 rounded-lg text-sm font-medium border transition ${
                   selectedScheduleDate === dayItem.key
-                    ? "border-orange-500 ring-1 ring-orange-400"
-                    : "border-slate-200"
+                    ? "border-orange-500 ring-2 ring-orange-300 shadow"
+                    : "border-slate-200 hover:border-indigo-300 hover:shadow"
                 }`}
                 style={{
                   background: dayItem.tone || "#fff",
@@ -498,26 +531,38 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
             ))}
           </div>
 
-          <div className="mt-3 text-xs text-slate-600 space-y-1">
-            <p>Scheduled devices: {scheduledDevices.length}</p>
-            <p>
-              Selected date: {selectedScheduleDate || "Not selected"} (
-              {selectedDateDeviceCount} devices)
-            </p>
-            <p>
-              Nearest date: {nearestScheduleDate || "No scheduled energize date"}.
-            </p>
-            <p>
-              Heatmap colors are based on each date&apos;s relative position in the
-              full energize schedule timeline.
-            </p>
+          <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
+            <div className="rounded-lg border border-slate-200 bg-white/90 px-3 py-2 text-slate-600">
+              <div className="text-[10px] uppercase tracking-wide text-slate-400">
+                Scheduled devices
+              </div>
+              <div className="text-base font-semibold text-slate-800">
+                {scheduledDevices.length}
+              </div>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-white/90 px-3 py-2 text-slate-600">
+              <div className="text-[10px] uppercase tracking-wide text-slate-400">
+                Selected date load
+              </div>
+              <div className="text-base font-semibold text-slate-800">
+                {selectedDateDeviceCount} devices
+              </div>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-white/90 px-3 py-2 text-slate-600">
+              <div className="text-[10px] uppercase tracking-wide text-slate-400">
+                Nearest date
+              </div>
+              <div className="text-sm font-semibold text-slate-800">
+                {nearestScheduleDate || "N/A"}
+              </div>
+            </div>
           </div>
         </div>
       )}
 
       {scheduleViewMode === "all" && (
-        <div className="absolute z-20 right-3 bottom-3 bg-white/95 border border-slate-200 rounded-lg shadow px-3 py-2 text-xs text-slate-700">
-          <p className="font-semibold mb-2">Heatmap Legend</p>
+        <div className="absolute z-20 right-3 bottom-3 bg-white/95 border-2 border-slate-300 rounded-xl shadow-xl px-6 py-4 text-sm text-slate-700 min-w-[360px]">
+          <p className="font-semibold mb-3 text-base">Heatmap Legend</p>
           <div className="space-y-1">
             {[
               ["rgba(124,58,237,0.85)", "Earliest schedule window"],
@@ -527,12 +572,12 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
               ["rgba(249,115,22,0.85)", "Late schedule window"],
               ["rgba(239,68,68,0.85)", "Latest schedule window"],
             ].map(([color, label]) => (
-              <div key={label} className="flex items-center gap-2">
+              <div key={label} className="flex items-center gap-3">
                 <span
-                  className="inline-block w-4 h-4 rounded-sm border border-slate-300"
+                  className="inline-block w-8 h-8 rounded-md border border-slate-300"
                   style={{ background: color }}
                 />
-                <span>{label}</span>
+                <span className="text-sm">{label}</span>
               </div>
             ))}
           </div>
