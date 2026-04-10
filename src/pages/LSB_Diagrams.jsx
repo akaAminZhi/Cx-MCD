@@ -301,17 +301,33 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
   const buildTemporalHeatColor = useCallback(
     (dateKey, count = 1) => {
       if (!dateKey || !heatRange) return null;
+
       const pointMs = dateKeyToMs(dateKey);
       const ratio = (pointMs - heatRange.minMs) / heatRange.spanMs;
-      const intensity = scheduleStats.maxCount
-        ? Math.max(0.55, Math.min(1, count / scheduleStats.maxCount))
-        : 0.75;
-      if (ratio <= 0.16) return `rgba(124,58,237,${intensity})`; // earliest
-      if (ratio <= 0.33) return `rgba(59,130,246,${intensity})`;
-      if (ratio <= 0.5) return `rgba(34,197,94,${intensity})`;
-      if (ratio <= 0.66) return `rgba(250,204,21,${intensity})`;
-      if (ratio <= 0.83) return `rgba(249,115,22,${intensity})`;
-      return `rgba(239,68,68,${intensity})`; // latest
+      const dateDepth = Math.max(0, Math.min(1, ratio));
+      const countDepth = scheduleStats.maxCount
+        ? Math.max(0, Math.min(1, count / scheduleStats.maxCount))
+        : 0.7;
+
+      const familyDepth = 0.45 * dateDepth + 0.55 * countDepth;
+      const palette = [
+        [124, 58, 237], // earliest
+        [59, 130, 246],
+        [34, 197, 94],
+        [250, 204, 21],
+        [249, 115, 22],
+        [239, 68, 68], // latest
+      ];
+
+      const colorIdx = Math.min(5, Math.floor(ratio / 0.1667));
+      const [r, g, b] = palette[colorIdx];
+
+      // 在同一色系里用不同深浅表达差异（越深表示越“重”）。
+      const mixWithWhite = 0.5 - familyDepth * 0.3; // 0.2 ~ 0.5
+      const shade = (channel) =>
+        Math.round(channel * (1 - mixWithWhite) + 255 * mixWithWhite);
+
+      return `rgb(${shade(r)}, ${shade(g)}, ${shade(b)})`;
     },
     [dateKeyToMs, heatRange, scheduleStats.maxCount]
   );
@@ -606,12 +622,12 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
           <p className="font-semibold mb-3 text-base">Heatmap Legend</p>
           <div className="space-y-1">
             {[
-              ["rgba(124,58,237,0.85)", "Earliest schedule window"],
-              ["rgba(59,130,246,0.85)", "Early schedule window"],
-              ["rgba(34,197,94,0.85)", "Middle schedule window"],
-              ["rgba(250,204,21,0.85)", "Mid-late schedule window"],
-              ["rgba(249,115,22,0.85)", "Late schedule window"],
-              ["rgba(239,68,68,0.85)", "Latest schedule window"],
+              ["rgb(155, 106, 240)", "Earliest schedule window"],
+              ["rgb(98, 160, 248)", "Early schedule window"],
+              ["rgb(81, 214, 127)", "Middle schedule window"],
+              ["rgb(251, 218, 92)", "Mid-late schedule window"],
+              ["rgb(250, 150, 82)", "Late schedule window"],
+              ["rgb(243, 113, 113)", "Latest schedule window"],
             ].map(([color, label]) => (
               <div key={label} className="flex items-center gap-3">
                 <span
