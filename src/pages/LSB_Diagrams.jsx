@@ -30,9 +30,48 @@ const DIAGRAM_CONFIG = {
     ),
   },
 };
+
 const DIAGRAMS = Object.keys(DIAGRAM_CONFIG);
 const projectId = "lsb";
 const SUBJECTS = ["panel board", "ATS", "Generator", "transformer"];
+
+// 越早越迫切：Earliest 最深、Latest 最浅
+const HEAT_BUCKET_COLORS = {
+  earliest: "#B91C1C", // deep red
+  early: "#DC2626", // red
+  middle: "#EA580C", // orange
+  midLate: "#F59E0B", // amber
+  late: "#FCD34D", // yellow
+  latest: "#FEF3C7", // pale warm yellow
+};
+
+const HEAT_BUCKET_TEXT_COLORS = {
+  earliest: "#FFFFFF",
+  early: "#FFFFFF",
+  middle: "#FFFFFF",
+  midLate: "#111827",
+  late: "#111827",
+  latest: "#374151",
+};
+
+const HEAT_BUCKET_LABELS = {
+  earliest: "Earliest",
+  early: "Early",
+  middle: "Middle",
+  midLate: "Mid-late",
+  late: "Late",
+  latest: "Latest",
+};
+
+const HEAT_BUCKET_ORDER = [
+  "earliest",
+  "early",
+  "middle",
+  "midLate",
+  "late",
+  "latest",
+];
+
 export default function LSB_Diagrams() {
   const [active, setActive] = useState("Normal");
   const [selectedDevice, setSelectedDevice] = useState(null);
@@ -53,9 +92,9 @@ export default function LSB_Diagrams() {
       });
     });
   }, [qc]);
+
   return (
     <Modal>
-      {/* 顶部 Normal / Emergency 切换按钮 */}
       <div className="flex gap-x-2 mb-3">
         {DIAGRAMS.map((label) => (
           <Button
@@ -75,13 +114,11 @@ export default function LSB_Diagrams() {
             active={active}
             projectId={projectId}
             onSelectDevice={setSelectedDevice}
-            // ⭐ 传 setActive 给内层，用于搜索结果切换 Normal/Emergency
             onChangeActive={setActive}
           />
         </Suspense>
       </div>
 
-      {/* 统一弹窗挂在这里 */}
       <Modal.Window name="device" size="xl">
         {({ closeModal }) => (
           <DeviceEditor
@@ -96,7 +133,6 @@ export default function LSB_Diagrams() {
   );
 }
 
-/** 真正的图纸区 */
 function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
   const { open } = useModal();
   const { data: devicesData } = useProjecDevices(projectId);
@@ -111,10 +147,8 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
 
-  // ⭐ 保存“待跨页聚焦”的信息（rect + id + page）
   const [pendingFocus, setPendingFocus] = useState(null);
 
-  // pan/zoom refs & 状态（每个模式一套）
   const panZoomRefs = useRef({});
   const panZoomStateRefs = useRef({});
   if (!panZoomStateRefs.current[active]) {
@@ -124,48 +158,54 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
     };
   }
 
-  // tooltip 容器
   const containerRef = useRef(null);
   const [tip, setTip] = useState({ show: false, x: 0, y: 0, text: "" });
 
-  const showTip = useCallback((e, text) => {
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    setTip({
-      show: true,
-      x: e.clientX - rect.left + 12,
-      y: e.clientY - rect.top + 12,
-      text,
-    });
-  }, []);
+  // All heatmap 模式下关闭图纸 tooltip
+  const shouldDisableDiagramTooltip = scheduleViewMode === "all";
 
-  const moveTip = useCallback((e, text) => {
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    setTip((prev) => ({
-      show: true,
-      x: e.clientX - rect.left + 12,
-      y: e.clientY - rect.top + 12,
-      text: text ?? prev.text,
-    }));
-  }, []);
+  const showTip = useCallback(
+    (e, text) => {
+      if (shouldDisableDiagramTooltip) return;
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setTip({
+        show: true,
+        x: e.clientX - rect.left + 12,
+        y: e.clientY - rect.top + 12,
+        text,
+      });
+    },
+    [shouldDisableDiagramTooltip]
+  );
+
+  const moveTip = useCallback(
+    (e, text) => {
+      if (shouldDisableDiagramTooltip) return;
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setTip((prev) => ({
+        show: true,
+        x: e.clientX - rect.left + 12,
+        y: e.clientY - rect.top + 12,
+        text: text ?? prev.text,
+      }));
+    },
+    [shouldDisableDiagramTooltip]
+  );
 
   const hideTip = useCallback(() => setTip((t) => ({ ...t, show: false })), []);
 
-  // ⭐ 搜索结果点击：
-  //   - 同页：直接 zoom
-  //   - 跨页：记下 pendingFocus + 切 tab，等新页的 ref ready 后 zoom
   const handlePickDevice = useCallback(
     (item) => {
       const rect = item.rect_px;
       const id = item.id;
-      const page = item.file_page ?? item.page; // 1=Normal, 2=Emergency
+      const page = item.file_page ?? item.page;
 
       if (!rect || rect.length !== 4) return;
 
       const targetMode = page === 2 ? "Emergency" : "Normal";
 
-      // ✅ 当前页就能显示 → 直接 zoom
       if (targetMode === active) {
         const instance = panZoomRefs.current[active];
         if (instance && typeof instance.zoomToRect === "function") {
@@ -176,7 +216,6 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
         }
       }
 
-      // ❗ 需要跨页：先记录任务，再切 tab，真正 zoom 放到 ref 回调里
       setPendingFocus({ rect, id, page });
       if (active !== targetMode) {
         onChangeActive?.(targetMode);
@@ -185,13 +224,10 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
     [active, onChangeActive]
   );
 
-  // ⭐ 用 callback ref 来拿到 PanZoomSVG 实例
   const attachPanZoomRef = useCallback(
     (mode) => (node) => {
-      // mount / unmount 都会进来
       panZoomRefs.current[mode] = node || null;
 
-      // 如果这个 mode 的实例刚刚 mount 且有待聚焦任务 → 在这里 zoom
       if (node && pendingFocus && typeof node.zoomToRect === "function") {
         const { rect, id, page } = pendingFocus;
         const targetMode = page === 2 ? "Emergency" : "Normal";
@@ -205,14 +241,13 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
           node.zoomToRect(rect, { padding: 60, maxScale: 6 });
           setHighlightDeviceId(id);
           setTimeout(() => setHighlightDeviceId(null), 2500);
-          setPendingFocus(null); // ✅ 任务完成，清掉
+          setPendingFocus(null);
         }
       }
     },
     [pendingFocus]
   );
 
-  // 点击任意设备 → 选中并打开 modal
   const onNodeClick = useCallback(
     (payload) => {
       setSelectedDeviceLocal(payload);
@@ -268,19 +303,6 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
     []
   );
 
-  const heatRange = useMemo(() => {
-    if (!sortedScheduleDates.length) return null;
-    const minMs = dateKeyToMs(sortedScheduleDates[0]);
-    const maxMs = dateKeyToMs(
-      sortedScheduleDates[sortedScheduleDates.length - 1]
-    );
-    return {
-      minMs,
-      maxMs,
-      spanMs: Math.max(1, maxMs - minMs),
-    };
-  }, [sortedScheduleDates, dateKeyToMs]);
-
   const nearestScheduleDate = useMemo(() => {
     if (!sortedScheduleDates.length) return "";
     const nextDate = sortedScheduleDates.find(
@@ -288,57 +310,59 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
     );
     return nextDate || sortedScheduleDates[sortedScheduleDates.length - 1];
   }, [sortedScheduleDates, todayDateKey]);
+
   const daysUntilNearestSchedule = useMemo(() => {
     if (!nearestScheduleDate) return null;
 
     const today = new Date(`${todayDateKey}T00:00:00Z`);
     const nearest = new Date(`${nearestScheduleDate}T00:00:00Z`);
-
     const diffMs = nearest.getTime() - today.getTime();
+
     return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
   }, [nearestScheduleDate, todayDateKey]);
 
+  // 全局按日期顺序映射到 6 个 bucket
+  // 越早 -> 越迫切 -> earliest -> 最深暖色
+  const dateBucketMap = useMemo(() => {
+    const uniqueDates = [...sortedScheduleDates];
+    if (!uniqueDates.length) return {};
+
+    const total = uniqueDates.length;
+    const map = {};
+
+    uniqueDates.forEach((dateKey, index) => {
+      const ratio = total === 1 ? 0 : index / (total - 1);
+
+      let bucket = "earliest";
+      if (ratio <= 0.16) bucket = "earliest";
+      else if (ratio <= 0.33) bucket = "early";
+      else if (ratio <= 0.5) bucket = "middle";
+      else if (ratio <= 0.66) bucket = "midLate";
+      else if (ratio <= 0.83) bucket = "late";
+      else bucket = "latest";
+
+      map[dateKey] = bucket;
+    });
+
+    return map;
+  }, [sortedScheduleDates]);
+
   const buildTemporalHeatColor = useCallback(
-    (dateKey, count = 1) => {
-      if (!dateKey || !heatRange) return null;
-
-      const pointMs = dateKeyToMs(dateKey);
-      if (!Number.isFinite(pointMs)) return null;
-
-      const rawRatio = (pointMs - heatRange.minMs) / heatRange.spanMs;
-      const ratio = Number.isFinite(rawRatio) ? rawRatio : 0;
-      const dateDepth = Math.max(0, Math.min(1, ratio));
-      const countDepth = scheduleStats.maxCount
-        ? Math.max(0, Math.min(1, count / scheduleStats.maxCount))
-        : 0.7;
-      const palette = [
-        [124, 58, 237], // earliest
-        [59, 130, 246],
-        [34, 197, 94],
-        [250, 204, 21],
-        [249, 115, 22],
-        [239, 68, 68], // latest
-      ];
-
-      const colorIdx = Math.max(0, Math.min(5, Math.floor(ratio / 0.1667)));
-      const segmentStart = colorIdx / 6;
-      const segmentEnd = (colorIdx + 1) / 6;
-      const localRatio =
-        segmentEnd - segmentStart > 0
-          ? (dateDepth - segmentStart) / (segmentEnd - segmentStart)
-          : 0;
-      const withinFamilyDepth = Math.max(0, Math.min(1, localRatio));
-      const [r, g, b] = palette[colorIdx];
-
-      // 在同一色系里用不同深浅表达差异（越深表示越“重”）。
-      const familyDepth = 0.7 * withinFamilyDepth + 0.3 * countDepth;
-      const mixWithWhite = 0.65 - familyDepth * 0.55; // 0.1 ~ 0.65 (增强同色系差异)
-      const shade = (channel) =>
-        Math.round(channel * (1 - mixWithWhite) + 255 * mixWithWhite);
-
-      return `rgb(${shade(r)}, ${shade(g)}, ${shade(b)})`;
+    (dateKey) => {
+      if (!dateKey) return null;
+      const bucket = dateBucketMap[dateKey];
+      return bucket ? HEAT_BUCKET_COLORS[bucket] : null;
     },
-    [dateKeyToMs, heatRange, scheduleStats.maxCount]
+    [dateBucketMap]
+  );
+
+  const getTemporalTextColor = useCallback(
+    (dateKey) => {
+      if (!dateKey) return "#64748b";
+      const bucket = dateBucketMap[dateKey];
+      return bucket ? HEAT_BUCKET_TEXT_COLORS[bucket] : "#64748b";
+    },
+    [dateBucketMap]
   );
 
   const shiftCalendarMonth = useCallback(
@@ -371,15 +395,36 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
       const current = new Date(Date.UTC(year, monthIndex, day));
       const key = current.toISOString().slice(0, 10);
       const count = scheduleStats.byDate[key] || 0;
+
+      const daysFromToday = Math.round(
+        (dateKeyToMs(key) - dateKeyToMs(todayDateKey)) / (1000 * 60 * 60 * 24)
+      );
+
+      const bucket = dateBucketMap[key] || null;
+
       days.push({
         key,
         day,
         count,
-        tone: buildTemporalHeatColor(key, count),
+        tone: count > 0 ? buildTemporalHeatColor(key) : null,
+        textColor: count > 0 ? getTemporalTextColor(key) : "#64748b",
+        daysFromToday,
+        isNearest: key === nearestScheduleDate,
+        bucket,
       });
     }
+
     return { startWeekday: start.getUTCDay(), days };
-  }, [calendarMonth, scheduleStats.byDate, buildTemporalHeatColor]);
+  }, [
+    calendarMonth,
+    scheduleStats.byDate,
+    buildTemporalHeatColor,
+    getTemporalTextColor,
+    dateKeyToMs,
+    todayDateKey,
+    nearestScheduleDate,
+    dateBucketMap,
+  ]);
 
   const getDeviceVisualState = useCallback(
     (item) => {
@@ -412,10 +457,9 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
       }
 
       if (scheduleViewMode === "all") {
-        const count = scheduleStats.byDate[scheduleDate] || 0;
         return {
           energizedToday: false,
-          colorOverride: buildTemporalHeatColor(scheduleDate, count),
+          colorOverride: buildTemporalHeatColor(scheduleDate),
         };
       }
 
@@ -424,17 +468,11 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
         colorOverride: undefined,
       };
     },
-    [
-      scheduleViewMode,
-      selectedScheduleDate,
-      scheduleStats.byDate,
-      buildTemporalHeatColor,
-    ]
+    [scheduleViewMode, selectedScheduleDate, buildTemporalHeatColor]
   );
 
   return (
     <div ref={containerRef} style={{ position: "relative", height: 800 }}>
-      {/* 搜索框浮层 */}
       <div className="absolute z-10 left-2 top-2 bg-white/85 backdrop-blur px-2 py-2 rounded shadow flex gap-2 items-center">
         <DeviceSearchBox
           project={projectId}
@@ -553,39 +591,61 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
               </div>
             ))}
           </div>
+
           <div className="grid grid-cols-7 gap-2">
             {Array.from({ length: calendarDays.startWeekday }).map((_, idx) => (
               <div key={`blank-${idx}`} className="h-20" />
             ))}
-            {calendarDays.days.map((dayItem) => (
-              <button
-                key={dayItem.key}
-                type="button"
-                onClick={() => {
-                  setSelectedScheduleDate(dayItem.key);
-                  setScheduleViewMode("date");
-                }}
-                className={`h-20 rounded-lg text-base font-medium border transition ${
-                  selectedScheduleDate === dayItem.key
-                    ? "border-orange-500 ring-2 ring-orange-300 shadow"
-                    : "border-slate-200 hover:border-indigo-300 hover:shadow"
-                }`}
-                style={{
-                  background: dayItem.tone || "#fff",
-                  color: dayItem.count ? "#0f172a" : "#64748b",
-                }}
-                title={
-                  dayItem.count
-                    ? `${dayItem.key}: ${dayItem.count} devices scheduled`
-                    : `${dayItem.key}: no devices scheduled`
-                }
-              >
-                <div>{dayItem.day}</div>
-                {dayItem.count > 0 && (
-                  <div className="text-sm opacity-85">{dayItem.count} dev</div>
-                )}
-              </button>
-            ))}
+
+            {calendarDays.days.map((dayItem) => {
+              const isSelected = selectedScheduleDate === dayItem.key;
+              const isNearToday =
+                dayItem.daysFromToday >= 0 && dayItem.daysFromToday <= 3;
+
+              return (
+                <button
+                  key={dayItem.key}
+                  type="button"
+                  onClick={() => {
+                    setSelectedScheduleDate(dayItem.key);
+                    setScheduleViewMode("date");
+                  }}
+                  className={`relative h-20 rounded-lg text-base font-medium border transition ${
+                    isSelected
+                      ? "border-orange-500 ring-2 ring-orange-300 shadow"
+                      : dayItem.isNearest
+                        ? "border-sky-500 ring-2 ring-sky-200"
+                        : "border-slate-200 hover:border-indigo-300 hover:shadow"
+                  }`}
+                  style={{
+                    background: dayItem.tone || "#fff",
+                    color: dayItem.count ? dayItem.textColor : "#64748b",
+                  }}
+                >
+                  {isNearToday && (
+                    <div className="absolute top-1 right-1 rounded-full bg-sky-600 text-white text-[10px] leading-none px-1.5 py-1 shadow">
+                      {dayItem.daysFromToday === 0
+                        ? "Today"
+                        : `+${dayItem.daysFromToday}`}
+                    </div>
+                  )}
+
+                  {dayItem.isNearest && !isNearToday && (
+                    <div className="absolute top-1 right-1 rounded-full bg-indigo-600 text-white text-[10px] leading-none px-1.5 py-1 shadow">
+                      Nearest
+                    </div>
+                  )}
+
+                  <div className="mt-2">{dayItem.day}</div>
+
+                  {dayItem.count > 0 && (
+                    <div className="mt-2 text-xs font-semibold opacity-95">
+                      {dayItem.count} dev
+                    </div>
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
@@ -597,6 +657,7 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
                 {scheduledDevices.length}
               </div>
             </div>
+
             <div className="rounded-lg border border-slate-200 bg-white/90 px-3 py-2 text-slate-600">
               <div className="text-xs uppercase tracking-wide text-slate-400">
                 Selected date load
@@ -605,6 +666,7 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
                 {selectedDateDeviceCount} devices
               </div>
             </div>
+
             <div className="rounded-lg border border-slate-200 bg-white/90 px-3 py-2 text-slate-600">
               <div className="text-xs uppercase tracking-wide text-slate-400">
                 Nearest date
@@ -629,31 +691,44 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
       {scheduleViewMode === "all" && (
         <div className="absolute z-20 right-3 bottom-3 bg-white/95 border-2 border-slate-300 rounded-xl shadow-xl px-6 py-4 text-sm text-slate-700 min-w-[200px]">
           <p className="font-semibold mb-3 text-base">Heatmap Legend</p>
-          <div className="space-y-1">
-            {[
-              ["rgb(155, 106, 240)", "Earliest schedule window"],
-              ["rgb(98, 160, 248)", "Early schedule window"],
-              ["rgb(81, 214, 127)", "Middle schedule window"],
-              ["rgb(251, 218, 92)", "Mid-late schedule window"],
-              ["rgb(250, 150, 82)", "Late schedule window"],
-              ["rgb(243, 113, 113)", "Latest schedule window"],
-            ].map(([color, label]) => (
-              <div key={label} className="flex items-center gap-3">
+
+          <div className="space-y-2">
+            {HEAT_BUCKET_ORDER.map((bucket) => (
+              <div key={bucket} className="flex items-center gap-3">
                 <span
                   className="inline-block w-8 h-8 rounded-md border border-slate-300"
-                  style={{ background: color }}
+                  style={{ background: HEAT_BUCKET_COLORS[bucket] }}
                 />
-                <span className="text-xl">{label}</span>
+                <span className="text-xl">{HEAT_BUCKET_LABELS[bucket]}</span>
               </div>
             ))}
+          </div>
+
+          <div className="mt-4 border-t border-slate-200 pt-3 space-y-2">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex items-center justify-center min-w-[40px] h-6 rounded-full bg-sky-600 text-white text-[10px] px-2">
+                +0~3
+              </span>
+              <span className="text-sm">Within next 3 days</span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="inline-flex items-center justify-center min-w-[52px] h-6 rounded-full bg-indigo-600 text-white text-[10px] px-2">
+                Nearest
+              </span>
+              <span className="text-sm">Nearest scheduled date</span>
+            </div>
+
+            <div className="text-xs text-slate-500">
+              Device count is shown directly inside each date cell.
+            </div>
           </div>
         </div>
       )}
 
-      {/* 主图层 */}
       <PanZoomSVG
         key={active}
-        ref={attachPanZoomRef(active)} // ⭐ callback ref
+        ref={attachPanZoomRef(active)}
         stateRef={{ current: panZoomStateRef }}
         height="800px"
       >
@@ -665,7 +740,6 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
         />
       </PanZoomSVG>
 
-      {/* tooltip */}
       {tip.show && (
         <div
           style={{
