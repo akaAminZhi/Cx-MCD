@@ -255,12 +255,40 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
     return { byDate, maxCount };
   }, [scheduledDevices]);
 
-  const buildScheduleColor = useCallback((count) => {
-    if (!count || !scheduleStats.maxCount) return null;
-    const ratio = count / scheduleStats.maxCount;
-    const alpha = 0.2 + ratio * 0.75;
-    return `rgba(59,130,246,${alpha.toFixed(2)})`;
-  }, [scheduleStats.maxCount]);
+  const todayDateKey = useMemo(
+    () => new Date().toISOString().slice(0, 10),
+    []
+  );
+
+  const sortedScheduleDates = useMemo(
+    () => Object.keys(scheduleStats.byDate).sort(),
+    [scheduleStats.byDate]
+  );
+
+  const nearestScheduleDate = useMemo(() => {
+    if (!sortedScheduleDates.length) return "";
+    const nextDate = sortedScheduleDates.find((dateKey) => dateKey >= todayDateKey);
+    return nextDate || sortedScheduleDates[sortedScheduleDates.length - 1];
+  }, [sortedScheduleDates, todayDateKey]);
+
+  const buildTemporalHeatColor = useCallback((dateKey, count = 1) => {
+    if (!dateKey) return null;
+    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+    const daysDelta = Math.round(
+      (new Date(`${dateKey}T00:00:00Z`) - new Date(`${todayDateKey}T00:00:00Z`)) /
+        ONE_DAY_MS
+    );
+    const intensity = scheduleStats.maxCount
+      ? Math.max(0.55, Math.min(1, count / scheduleStats.maxCount))
+      : 0.75;
+
+    if (daysDelta < 0) return `rgba(124,58,237,${intensity})`; // past
+    if (daysDelta === 0) return `rgba(239,68,68,${intensity})`; // today
+    if (daysDelta <= 3) return `rgba(249,115,22,${intensity})`; // 1-3 days
+    if (daysDelta <= 7) return `rgba(250,204,21,${intensity})`; // 4-7 days
+    if (daysDelta <= 14) return `rgba(34,197,94,${intensity})`; // 8-14 days
+    return `rgba(59,130,246,${intensity})`; // 15+ days
+  }, [todayDateKey, scheduleStats.maxCount]);
 
   const selectedDateDeviceCount = selectedScheduleDate
     ? scheduleStats.byDate[selectedScheduleDate] || 0
@@ -281,13 +309,12 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
       days.push({
         key,
         day,
-        weekDay: current.getUTCDay(),
         count,
-        tone: buildScheduleColor(count),
+        tone: buildTemporalHeatColor(key, count),
       });
     }
     return { startWeekday: start.getUTCDay(), days };
-  }, [calendarMonth, scheduleStats.byDate, buildScheduleColor]);
+  }, [calendarMonth, scheduleStats.byDate, buildTemporalHeatColor]);
 
   const getDeviceVisualState = useCallback(
     (item) => {
@@ -320,7 +347,7 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
         const count = scheduleStats.byDate[scheduleDate] || 0;
         return {
           energizedToday: false,
-          colorOverride: buildScheduleColor(count),
+          colorOverride: buildTemporalHeatColor(scheduleDate, count),
         };
       }
 
@@ -333,7 +360,7 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
       scheduleViewMode,
       selectedScheduleDate,
       scheduleStats.byDate,
-      buildScheduleColor,
+      buildTemporalHeatColor,
     ]
   );
 
@@ -352,25 +379,37 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
       </div>
 
       {showSchedulePanel && (
-        <div className="absolute z-20 left-2 top-16 w-[360px] bg-white rounded-lg shadow-xl border border-slate-200 p-3">
+        <div className="absolute z-20 left-2 top-16 w-[720px] bg-white rounded-lg shadow-xl border border-slate-200 p-5">
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-sm font-semibold text-slate-800">
               Energize Schedule
             </h4>
-            <button
-              type="button"
-              className="text-xs text-slate-500 hover:text-slate-700"
-              onClick={() => setShowSchedulePanel(false)}
-            >
-              Close
-            </button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => {
+                  if (!nearestScheduleDate) return;
+                  setSelectedScheduleDate(nearestScheduleDate);
+                  setScheduleViewMode("date");
+                  setCalendarMonth(nearestScheduleDate.slice(0, 7));
+                }}
+              >
+                Nearest Energize Date
+              </Button>
+              <button
+                type="button"
+                className="text-xs text-slate-500 hover:text-slate-700"
+                onClick={() => setShowSchedulePanel(false)}
+              >
+                Close
+              </button>
+            </div>
           </div>
 
           <div className="space-y-2 mb-3">
             <label className="block text-xs text-slate-600">
               View mode
               <select
-                className="mt-1 w-full border border-slate-300 rounded px-2 py-1 text-sm"
+                className="mt-1 w-full border border-slate-300 rounded px-3 py-2 text-base"
                 value={scheduleViewMode}
                 onChange={(e) => setScheduleViewMode(e.target.value)}
               >
@@ -384,23 +423,23 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
               Month
               <input
                 type="month"
-                className="mt-1 w-full border border-slate-300 rounded px-2 py-1 text-sm"
+                className="mt-1 w-full border border-slate-300 rounded px-3 py-2 text-base"
                 value={calendarMonth}
                 onChange={(e) => setCalendarMonth(e.target.value)}
               />
             </label>
           </div>
 
-          <div className="grid grid-cols-7 gap-1 text-[11px] text-slate-500 mb-1">
+          <div className="grid grid-cols-7 gap-2 text-sm text-slate-500 mb-2">
             {["S", "M", "T", "W", "T", "F", "S"].map((d, idx) => (
               <div key={`${d}-${idx}`} className="text-center">
                 {d}
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-2">
             {Array.from({ length: calendarDays.startWeekday }).map((_, idx) => (
-              <div key={`blank-${idx}`} className="h-9" />
+              <div key={`blank-${idx}`} className="h-16" />
             ))}
             {calendarDays.days.map((dayItem) => (
               <button
@@ -410,7 +449,7 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
                   setSelectedScheduleDate(dayItem.key);
                   setScheduleViewMode("date");
                 }}
-                className={`h-9 rounded text-xs border ${
+                className={`h-16 rounded text-sm font-medium border ${
                   selectedScheduleDate === dayItem.key
                     ? "border-orange-500 ring-1 ring-orange-400"
                     : "border-slate-200"
@@ -425,7 +464,10 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
                     : `${dayItem.key}: no devices scheduled`
                 }
               >
-                {dayItem.day}
+                <div>{dayItem.day}</div>
+                {dayItem.count > 0 && (
+                  <div className="text-[11px] opacity-80">{dayItem.count} dev</div>
+                )}
               </button>
             ))}
           </div>
@@ -436,7 +478,36 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
               Selected date: {selectedScheduleDate || "Not selected"} (
               {selectedDateDeviceCount} devices)
             </p>
-            <p>Heatmap: deeper blue means more devices on that date.</p>
+            <p>
+              Nearest date: {nearestScheduleDate || "No scheduled energize date"}.
+            </p>
+            <p>
+              Heatmap colors are based on how close the date is to today.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {scheduleViewMode === "all" && (
+        <div className="absolute z-20 right-3 bottom-3 bg-white/95 border border-slate-200 rounded-lg shadow px-3 py-2 text-xs text-slate-700">
+          <p className="font-semibold mb-2">Heatmap Legend</p>
+          <div className="space-y-1">
+            {[
+              ["rgba(124,58,237,0.85)", "Past date"],
+              ["rgba(239,68,68,0.85)", "Today"],
+              ["rgba(249,115,22,0.85)", "1-3 days"],
+              ["rgba(250,204,21,0.85)", "4-7 days"],
+              ["rgba(34,197,94,0.85)", "8-14 days"],
+              ["rgba(59,130,246,0.85)", "15+ days"],
+            ].map(([color, label]) => (
+              <div key={label} className="flex items-center gap-2">
+                <span
+                  className="inline-block w-4 h-4 rounded-sm border border-slate-300"
+                  style={{ background: color }}
+                />
+                <span>{label}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
