@@ -6,6 +6,7 @@ import React, {
   useRef,
   useCallback,
   useEffect,
+  useMemo,
 } from "react";
 import Button from "../ui/Button";
 import PanZoomSVG from "../ui/PanZoomSVG";
@@ -15,6 +16,7 @@ import Modal, { useModal } from "../ui/Modal";
 import DeviceEditor from "../ui/DeviceEditor";
 import { useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
+import useProjecDevices from "../hooks/useProjectDevices";
 
 const DIAGRAM_CONFIG = {
   Normal: {
@@ -97,9 +99,17 @@ export default function LSB_Diagrams() {
 /** 真正的图纸区 */
 function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
   const { open } = useModal();
+  const { data: devicesData } = useProjecDevices(projectId);
 
   const [highlightDeviceId, setHighlightDeviceId] = useState(null);
   const [selectedDeviceLocal, setSelectedDeviceLocal] = useState(null);
+  const [showSchedulePanel, setShowSchedulePanel] = useState(false);
+  const [scheduleViewMode, setScheduleViewMode] = useState("none"); // none | date | all
+  const [selectedScheduleDate, setSelectedScheduleDate] = useState("");
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
 
   // ⭐ 保存“待跨页聚焦”的信息（rect + id + page）
   const [pendingFocus, setPendingFocus] = useState(null);
@@ -227,16 +237,209 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
     [showTip, moveTip, hideTip, onNodeClick]
   );
 
+  const scheduledDevices = useMemo(() => {
+    if (!Array.isArray(devicesData?.data)) return [];
+    return devicesData.data.filter((item) => item?.will_energized_at);
+  }, [devicesData]);
+
+  const scheduleStats = useMemo(() => {
+    const byDate = {};
+    let maxCount = 0;
+
+    scheduledDevices.forEach((item) => {
+      const key = new Date(item.will_energized_at).toISOString().slice(0, 10);
+      byDate[key] = (byDate[key] || 0) + 1;
+      maxCount = Math.max(maxCount, byDate[key]);
+    });
+
+    return { byDate, maxCount };
+  }, [scheduledDevices]);
+
+  const buildScheduleColor = useCallback((count) => {
+    if (!count || !scheduleStats.maxCount) return null;
+    const ratio = count / scheduleStats.maxCount;
+    const alpha = 0.2 + ratio * 0.75;
+    return `rgba(59,130,246,${alpha.toFixed(2)})`;
+  }, [scheduleStats.maxCount]);
+
+  const selectedDateDeviceCount = selectedScheduleDate
+    ? scheduleStats.byDate[selectedScheduleDate] || 0
+    : 0;
+
+  const calendarDays = useMemo(() => {
+    const [yearStr, monthStr] = calendarMonth.split("-");
+    const year = Number(yearStr);
+    const monthIndex = Number(monthStr) - 1;
+    const start = new Date(Date.UTC(year, monthIndex, 1));
+    const endDay = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
+    const days = [];
+
+    for (let day = 1; day <= endDay; day += 1) {
+      const current = new Date(Date.UTC(year, monthIndex, day));
+      const key = current.toISOString().slice(0, 10);
+      const count = scheduleStats.byDate[key] || 0;
+      days.push({
+        key,
+        day,
+        weekDay: current.getUTCDay(),
+        count,
+        tone: buildScheduleColor(count),
+      });
+    }
+    return { startWeekday: start.getUTCDay(), days };
+  }, [calendarMonth, scheduleStats.byDate, buildScheduleColor]);
+
+  const getDeviceVisualState = useCallback(
+    (item) => {
+      if (!item || item.energized) {
+        return {
+          energizedToday: item?.energized_today ?? false,
+          colorOverride: undefined,
+        };
+      }
+
+      const scheduleDate = item.will_energized_at
+        ? new Date(item.will_energized_at).toISOString().slice(0, 10)
+        : null;
+
+      if (!scheduleDate) {
+        return {
+          energizedToday: item.energized_today,
+          colorOverride: undefined,
+        };
+      }
+
+      if (scheduleViewMode === "date" && selectedScheduleDate === scheduleDate) {
+        return {
+          energizedToday: true,
+          colorOverride: "#f97316",
+        };
+      }
+
+      if (scheduleViewMode === "all") {
+        const count = scheduleStats.byDate[scheduleDate] || 0;
+        return {
+          energizedToday: false,
+          colorOverride: buildScheduleColor(count),
+        };
+      }
+
+      return {
+        energizedToday: item.energized_today,
+        colorOverride: undefined,
+      };
+    },
+    [
+      scheduleViewMode,
+      selectedScheduleDate,
+      scheduleStats.byDate,
+      buildScheduleColor,
+    ]
+  );
+
   return (
     <div ref={containerRef} style={{ position: "relative", height: 800 }}>
       {/* 搜索框浮层 */}
-      <div className="absolute z-10 left-2 top-2 bg-white/85 backdrop-blur px-2 py-2 rounded shadow">
+      <div className="absolute z-10 left-2 top-2 bg-white/85 backdrop-blur px-2 py-2 rounded shadow flex gap-2 items-center">
         <DeviceSearchBox
           project={projectId}
           onPick={handlePickDevice}
           placeholder="Search device…"
         />
+        <Button onClick={() => setShowSchedulePanel((v) => !v)}>
+          Energize Calendar
+        </Button>
       </div>
+
+      {showSchedulePanel && (
+        <div className="absolute z-20 left-2 top-16 w-[360px] bg-white rounded-lg shadow-xl border border-slate-200 p-3">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-sm font-semibold text-slate-800">
+              Energize Schedule
+            </h4>
+            <button
+              type="button"
+              className="text-xs text-slate-500 hover:text-slate-700"
+              onClick={() => setShowSchedulePanel(false)}
+            >
+              Close
+            </button>
+          </div>
+
+          <div className="space-y-2 mb-3">
+            <label className="block text-xs text-slate-600">
+              View mode
+              <select
+                className="mt-1 w-full border border-slate-300 rounded px-2 py-1 text-sm"
+                value={scheduleViewMode}
+                onChange={(e) => setScheduleViewMode(e.target.value)}
+              >
+                <option value="none">Off</option>
+                <option value="date">Selected date → energizedToday color</option>
+                <option value="all">All scheduled dates heatmap</option>
+              </select>
+            </label>
+
+            <label className="block text-xs text-slate-600">
+              Month
+              <input
+                type="month"
+                className="mt-1 w-full border border-slate-300 rounded px-2 py-1 text-sm"
+                value={calendarMonth}
+                onChange={(e) => setCalendarMonth(e.target.value)}
+              />
+            </label>
+          </div>
+
+          <div className="grid grid-cols-7 gap-1 text-[11px] text-slate-500 mb-1">
+            {["S", "M", "T", "W", "T", "F", "S"].map((d, idx) => (
+              <div key={`${d}-${idx}`} className="text-center">
+                {d}
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-1">
+            {Array.from({ length: calendarDays.startWeekday }).map((_, idx) => (
+              <div key={`blank-${idx}`} className="h-9" />
+            ))}
+            {calendarDays.days.map((dayItem) => (
+              <button
+                key={dayItem.key}
+                type="button"
+                onClick={() => {
+                  setSelectedScheduleDate(dayItem.key);
+                  setScheduleViewMode("date");
+                }}
+                className={`h-9 rounded text-xs border ${
+                  selectedScheduleDate === dayItem.key
+                    ? "border-orange-500 ring-1 ring-orange-400"
+                    : "border-slate-200"
+                }`}
+                style={{
+                  background: dayItem.tone || "#fff",
+                  color: dayItem.count ? "#0f172a" : "#64748b",
+                }}
+                title={
+                  dayItem.count
+                    ? `${dayItem.key}: ${dayItem.count} devices scheduled`
+                    : `${dayItem.key}: no devices scheduled`
+                }
+              >
+                {dayItem.day}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-3 text-xs text-slate-600 space-y-1">
+            <p>Scheduled devices: {scheduledDevices.length}</p>
+            <p>
+              Selected date: {selectedScheduleDate || "Not selected"} (
+              {selectedDateDeviceCount} devices)
+            </p>
+            <p>Heatmap: deeper blue means more devices on that date.</p>
+          </div>
+        </div>
+      )}
 
       {/* 主图层 */}
       <PanZoomSVG
@@ -249,6 +452,7 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
           {...diagramCallbacks}
           highlightDeviceId={highlightDeviceId}
           selectedDevice={selectedDeviceLocal}
+          getDeviceVisualState={getDeviceVisualState}
         />
       </PanZoomSVG>
 

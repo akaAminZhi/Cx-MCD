@@ -22,6 +22,7 @@ function Transformer({
   strokeWidth = 5,
   energized = false,
   energizedToday,
+  colorOverride,
   name,
   ...rest
 }) {
@@ -30,6 +31,7 @@ function Transformer({
   const targetH = Math.max(0, y2 - y1);
 
   const getFillColor = () => {
+    if (colorOverride) return colorOverride;
     if (energizedToday) return COLOR_MAP.orange500;
     if (energized) return COLOR_MAP.red500;
     return COLOR_MAP.gray50;
@@ -88,7 +90,7 @@ function Transformer({
         <rect x="48" y="78" width="164" height="10" rx="3" />
 
         {/* ──────── 机体主箱 ──────── */}
-        <rect x="48" y="88" width="164" height="120" rx="10" />
+        <rect x="48" y="88" width="164" height="120" rx="10" fill={getFillColor()} />
 
         {/* ──────── 两侧散热片 ────── */}
         <rect x="20" y="100" width="28" height="96" rx="6" />
@@ -142,6 +144,7 @@ Transformer.propTypes = {
   y2: PropTypes.number.isRequired,
 
   energized: PropTypes.bool,
+  colorOverride: PropTypes.string,
 };
 
 function isEqual(prev, next) {
@@ -153,6 +156,8 @@ function isEqual(prev, next) {
     prev.stroke === next.stroke &&
     prev.strokeWidth === next.strokeWidth &&
     prev.energized === next.energized &&
+    prev.energizedToday === next.energizedToday &&
+    prev.colorOverride === next.colorOverride &&
     prev.name === next.name
   );
 }

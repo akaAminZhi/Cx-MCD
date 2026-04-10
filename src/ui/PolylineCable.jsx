@@ -11,6 +11,7 @@ function PolylineCable({
   dashed = false,
   energized = false,
   energizedToday = false,
+  colorOverride,
   highlight = false,
 
   // 箭头 & 文本
@@ -28,6 +29,7 @@ function PolylineCable({
   const pointsStr = points.map((p) => p.join(",")).join(" ");
 
   const strokeColor = (() => {
+    if (colorOverride) return colorOverride;
     if (energizedToday) return COLOR_MAP.orange500;
     if (energized) return COLOR_MAP.red500;
     if (highlight) return COLOR_MAP.green500;
@@ -186,6 +188,7 @@ PolylineCable.propTypes = {
   dashed: PropTypes.bool,
   energized: PropTypes.bool,
   energizedToday: PropTypes.bool,
+  colorOverride: PropTypes.string,
   highlight: PropTypes.bool,
 
   arrowType: PropTypes.oneOf(["head", "tail"]),
@@ -215,6 +218,7 @@ function isEqual(prev, next) {
     prev.dashed === next.dashed &&
     prev.energized === next.energized &&
     prev.energizedToday === next.energizedToday &&
+    prev.colorOverride === next.colorOverride &&
     prev.highlight === next.highlight &&
     prev.arrowType === next.arrowType &&
     prev.label === next.label &&

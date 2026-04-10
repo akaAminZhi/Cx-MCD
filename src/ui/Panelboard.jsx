@@ -10,6 +10,7 @@ function Panelboard({
   name,
   energized,
   energizedToday,
+  colorOverride,
   onClick,
   onMouseEnter,
   onMouseMove,
@@ -26,6 +27,7 @@ function Panelboard({
   const width = x2 - x1;
   const height = y2 - y1;
   const getFillColor = () => {
+    if (colorOverride) return colorOverride;
     if (energizedToday) return COLOR_MAP.orange500;
     if (energized) return COLOR_MAP.red500;
     return COLOR_MAP.gray50;
@@ -101,6 +103,7 @@ Panelboard.propTypes = {
   x2: PropTypes.number.isRequired,
   y2: PropTypes.number.isRequired,
   energized: PropTypes.bool,
+  colorOverride: PropTypes.string,
   onClick: PropTypes.func,
   onMouseEnter: PropTypes.func,
   onMouseMove: PropTypes.func,
@@ -115,7 +118,8 @@ function isEqual(prev, next) {
     prev.y2 === next.y2 &&
     prev.name === next.name &&
     prev.energized === next.energized &&
-    prev.energizedToday === next.energizedToday
+    prev.energizedToday === next.energizedToday &&
+    prev.colorOverride === next.colorOverride
   );
 }
 

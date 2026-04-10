@@ -16,6 +16,7 @@ function LSB_Normal_Raiser({
   onNodeLeave,
   onNodeClick,
   highlightDeviceId,
+  getDeviceVisualState,
 }) {
   // 1️⃣ 所有 hooks 放最上面，顺序每次 render 都一样
   const { data, isLoading, error } = useProjecDevices("lsb");
@@ -148,61 +149,77 @@ function LSB_Normal_Raiser({
     onNodeLeave?.();
   };
 
+  const resolveVisualState = (item) =>
+    getDeviceVisualState?.(item) ?? {
+      energizedToday: item.energized_today,
+      colorOverride: undefined,
+    };
+
   return (
     <>
       {panelboards.map((item) => (
-        <Panelboard
-          key={item.id}
-          name={item.text}
-          x1={item.rect_px[0]}
-          y1={item.rect_px[1]}
-          x2={item.rect_px[2]}
-          y2={item.rect_px[3]}
-          energized={item.energized}
-          energizedToday={item.energized_today}
-          onClick={() => onNodeClick?.(item)}
-          onMouseEnter={(e) =>
-            onNodeEnter?.(e, {
-              ...item,
-              tooltip: `${item.text} • ${item.current_status}`,
-            })
-          }
-          onMouseMove={(e) =>
-            onNodeMove?.(e, {
-              ...item,
-              tooltip: `${item.text} • ${item.current_status}`,
-            })
-          }
-          onMouseLeave={() => onNodeLeave?.()}
-        />
+        (() => {
+          const visualState = resolveVisualState(item);
+          return (
+            <Panelboard
+              key={item.id}
+              name={item.text}
+              x1={item.rect_px[0]}
+              y1={item.rect_px[1]}
+              x2={item.rect_px[2]}
+              y2={item.rect_px[3]}
+              energized={item.energized}
+              energizedToday={visualState.energizedToday}
+              colorOverride={visualState.colorOverride}
+              onClick={() => onNodeClick?.(item)}
+              onMouseEnter={(e) =>
+                onNodeEnter?.(e, {
+                  ...item,
+                  tooltip: `${item.text} • ${item.current_status}`,
+                })
+              }
+              onMouseMove={(e) =>
+                onNodeMove?.(e, {
+                  ...item,
+                  tooltip: `${item.text} • ${item.current_status}`,
+                })
+              }
+              onMouseLeave={() => onNodeLeave?.()}
+            />
+          );
+        })()
       ))}
 
-      {transforms.map((item) => (
-        <Transformer
-          key={item.id}
-          name={item.text}
-          x1={item.rect_px[0]}
-          y1={item.rect_px[1]}
-          x2={item.rect_px[2]}
-          y2={item.rect_px[3]}
-          energized={item.energized}
-          energizedToday={item.energized_today}
-          onClick={() => onNodeClick?.(item)}
-          onMouseEnter={(e) =>
-            onNodeEnter?.(e, {
-              ...item,
-              tooltip: `${item.text} • ${item.current_status}`,
-            })
-          }
-          onMouseMove={(e) =>
-            onNodeMove?.(e, {
-              ...item,
-              tooltip: `${item.text} • ${item.current_status}`,
-            })
-          }
-          onMouseLeave={() => onNodeLeave?.()}
-        />
-      ))}
+      {transforms.map((item) => {
+        const visualState = resolveVisualState(item);
+        return (
+          <Transformer
+            key={item.id}
+            name={item.text}
+            x1={item.rect_px[0]}
+            y1={item.rect_px[1]}
+            x2={item.rect_px[2]}
+            y2={item.rect_px[3]}
+            energized={item.energized}
+            energizedToday={visualState.energizedToday}
+            colorOverride={visualState.colorOverride}
+            onClick={() => onNodeClick?.(item)}
+            onMouseEnter={(e) =>
+              onNodeEnter?.(e, {
+                ...item,
+                tooltip: `${item.text} • ${item.current_status}`,
+              })
+            }
+            onMouseMove={(e) =>
+              onNodeMove?.(e, {
+                ...item,
+                tooltip: `${item.text} • ${item.current_status}`,
+              })
+            }
+            onMouseLeave={() => onNodeLeave?.()}
+          />
+        );
+      })}
 
       {room_line.map((item) => (
         <Arrow_line
@@ -239,6 +256,7 @@ function LSB_Normal_Raiser({
 
       {/* ⭐ Cable 渲染：可以展开多条 */}
       {cable.map((item) => {
+        const visualState = resolveVisualState(item);
         const expanded = expandedCableIds.has(item.id);
         const hasShort =
           item.short_segments_px &&
@@ -255,7 +273,8 @@ function LSB_Normal_Raiser({
               id={item.id}
               points={item.polygon_points_px}
               energized={item.energized}
-              energizedToday={item.energized_today}
+              energizedToday={visualState.energizedToday}
+              colorOverride={visualState.colorOverride}
               highlight={highlight}
               onClick={onCableClick}
             />
@@ -273,7 +292,8 @@ function LSB_Normal_Raiser({
               id={`${item.id}-head`}
               points={item.short_segments_px.head}
               energized={item.energized}
-              energizedToday={item.energized_today}
+              energizedToday={visualState.energizedToday}
+              colorOverride={visualState.colorOverride}
               arrowType="head"
               showLabel={false} // ⭐ 不画 text，只用 tooltip
               onClick={onCableClick}
@@ -301,7 +321,8 @@ function LSB_Normal_Raiser({
               id={`${item.id}-tail`}
               points={item.short_segments_px.tail}
               energized={item.energized}
-              energizedToday={item.energized_today}
+              energizedToday={visualState.energizedToday}
+              colorOverride={visualState.colorOverride}
               arrowType="tail"
               showLabel={false} // ⭐ 同样不画 text
               onClick={onCableClick}
@@ -327,26 +348,30 @@ function LSB_Normal_Raiser({
         );
       })}
 
-      {bus.map((item) => (
-        <BusLine
-          key={item.id}
-          id={item.id}
-          rect_px={item.rect_px}
-          energized={item.energized}
-          energizedToday={item.energized_today}
-          name={item.text}
-          onClick={() => onNodeClick?.(item)}
-          onMouseMove={(e) =>
-            onNodeMove?.(e, {
-              ...item,
-              tooltip: `${item.text} • ${
-                item.energized ? "Energized" : "De-energized"
-              }`,
-            })
-          }
-          onMouseLeave={() => onNodeLeave?.()}
-        />
-      ))}
+      {bus.map((item) => {
+        const visualState = resolveVisualState(item);
+        return (
+          <BusLine
+            key={item.id}
+            id={item.id}
+            rect_px={item.rect_px}
+            energized={item.energized}
+            energizedToday={visualState.energizedToday}
+            colorOverride={visualState.colorOverride}
+            name={item.text}
+            onClick={() => onNodeClick?.(item)}
+            onMouseMove={(e) =>
+              onNodeMove?.(e, {
+                ...item,
+                tooltip: `${item.text} • ${
+                  item.energized ? "Energized" : "De-energized"
+                }`,
+              })
+            }
+            onMouseLeave={() => onNodeLeave?.()}
+          />
+        );
+      })}
 
       <CableBridgesArc
         cables={bridgeCables}

@@ -26,6 +26,7 @@ function BusLine({
   dashed = false,
   energized = false,
   energizedToday = false,
+  colorOverride,
   name,
   onClick,
 
@@ -35,6 +36,7 @@ function BusLine({
 }) {
   const { a, b } = rectToSegment(rect_px);
   const getFillColor = () => {
+    if (colorOverride) return colorOverride;
     if (energizedToday) return COLOR_MAP.orange500;
     if (energized) return COLOR_MAP.red500;
     return "#111";
@@ -93,6 +95,7 @@ BusLine.propTypes = {
   color: PropTypes.string,
   width: PropTypes.number,
   dashed: PropTypes.bool,
+  colorOverride: PropTypes.string,
   onClick: PropTypes.func,
   onMouseEnter: PropTypes.func,
   onMouseMove: PropTypes.func,
@@ -106,6 +109,7 @@ function isEqual(prev, next) {
     prev.dashed === next.dashed &&
     prev.energized === next.energized &&
     prev.energizedToday === next.energizedToday &&
+    prev.colorOverride === next.colorOverride &&
     prev.name === next.name &&
     prev.rect_px?.length === next.rect_px?.length &&
     prev.rect_px?.every((value, idx) => value === next.rect_px?.[idx])
