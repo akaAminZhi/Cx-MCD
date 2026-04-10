@@ -256,10 +256,7 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
     return { byDate, maxCount };
   }, [scheduledDevices]);
 
-  const todayDateKey = useMemo(
-    () => new Date().toISOString().slice(0, 10),
-    []
-  );
+  const todayDateKey = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
   const sortedScheduleDates = useMemo(
     () => Object.keys(scheduleStats.byDate).sort(),
@@ -274,7 +271,9 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
   const heatRange = useMemo(() => {
     if (!sortedScheduleDates.length) return null;
     const minMs = dateKeyToMs(sortedScheduleDates[0]);
-    const maxMs = dateKeyToMs(sortedScheduleDates[sortedScheduleDates.length - 1]);
+    const maxMs = dateKeyToMs(
+      sortedScheduleDates[sortedScheduleDates.length - 1]
+    );
     return {
       minMs,
       maxMs,
@@ -284,33 +283,52 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
 
   const nearestScheduleDate = useMemo(() => {
     if (!sortedScheduleDates.length) return "";
-    const nextDate = sortedScheduleDates.find((dateKey) => dateKey >= todayDateKey);
+    const nextDate = sortedScheduleDates.find(
+      (dateKey) => dateKey >= todayDateKey
+    );
     return nextDate || sortedScheduleDates[sortedScheduleDates.length - 1];
   }, [sortedScheduleDates, todayDateKey]);
+  const daysUntilNearestSchedule = useMemo(() => {
+    if (!nearestScheduleDate) return null;
 
-  const buildTemporalHeatColor = useCallback((dateKey, count = 1) => {
-    if (!dateKey || !heatRange) return null;
-    const pointMs = dateKeyToMs(dateKey);
-    const ratio = (pointMs - heatRange.minMs) / heatRange.spanMs;
-    const intensity = scheduleStats.maxCount
-      ? Math.max(0.55, Math.min(1, count / scheduleStats.maxCount))
-      : 0.75;
-    if (ratio <= 0.16) return `rgba(124,58,237,${intensity})`; // earliest
-    if (ratio <= 0.33) return `rgba(59,130,246,${intensity})`;
-    if (ratio <= 0.5) return `rgba(34,197,94,${intensity})`;
-    if (ratio <= 0.66) return `rgba(250,204,21,${intensity})`;
-    if (ratio <= 0.83) return `rgba(249,115,22,${intensity})`;
-    return `rgba(239,68,68,${intensity})`; // latest
-  }, [dateKeyToMs, heatRange, scheduleStats.maxCount]);
+    const today = new Date(`${todayDateKey}T00:00:00Z`);
+    const nearest = new Date(`${nearestScheduleDate}T00:00:00Z`);
 
-  const shiftCalendarMonth = useCallback((offset) => {
-    const [yearStr, monthStr] = calendarMonth.split("-");
-    const date = new Date(Date.UTC(Number(yearStr), Number(monthStr) - 1 + offset, 1));
-    const nextMonth = `${date.getUTCFullYear()}-${String(
-      date.getUTCMonth() + 1
-    ).padStart(2, "0")}`;
-    setCalendarMonth(nextMonth);
-  }, [calendarMonth]);
+    const diffMs = nearest.getTime() - today.getTime();
+    return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  }, [nearestScheduleDate, todayDateKey]);
+
+  const buildTemporalHeatColor = useCallback(
+    (dateKey, count = 1) => {
+      if (!dateKey || !heatRange) return null;
+      const pointMs = dateKeyToMs(dateKey);
+      const ratio = (pointMs - heatRange.minMs) / heatRange.spanMs;
+      const intensity = scheduleStats.maxCount
+        ? Math.max(0.55, Math.min(1, count / scheduleStats.maxCount))
+        : 0.75;
+      if (ratio <= 0.16) return `rgba(124,58,237,${intensity})`; // earliest
+      if (ratio <= 0.33) return `rgba(59,130,246,${intensity})`;
+      if (ratio <= 0.5) return `rgba(34,197,94,${intensity})`;
+      if (ratio <= 0.66) return `rgba(250,204,21,${intensity})`;
+      if (ratio <= 0.83) return `rgba(249,115,22,${intensity})`;
+      return `rgba(239,68,68,${intensity})`; // latest
+    },
+    [dateKeyToMs, heatRange, scheduleStats.maxCount]
+  );
+
+  const shiftCalendarMonth = useCallback(
+    (offset) => {
+      const [yearStr, monthStr] = calendarMonth.split("-");
+      const date = new Date(
+        Date.UTC(Number(yearStr), Number(monthStr) - 1 + offset, 1)
+      );
+      const nextMonth = `${date.getUTCFullYear()}-${String(
+        date.getUTCMonth() + 1
+      ).padStart(2, "0")}`;
+      setCalendarMonth(nextMonth);
+    },
+    [calendarMonth]
+  );
 
   const selectedDateDeviceCount = selectedScheduleDate
     ? scheduleStats.byDate[selectedScheduleDate] || 0
@@ -358,7 +376,10 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
         };
       }
 
-      if (scheduleViewMode === "date" && selectedScheduleDate === scheduleDate) {
+      if (
+        scheduleViewMode === "date" &&
+        selectedScheduleDate === scheduleDate
+      ) {
         return {
           energizedToday: true,
           colorOverride: "#f97316",
@@ -472,9 +493,9 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
             </div>
 
             <div className="rounded-xl border border-indigo-100 bg-white/90 p-4">
-            <div className="text-sm font-semibold text-slate-700 mb-3">
-              Month / Date selection
-            </div>
+              <div className="text-sm font-semibold text-slate-700 mb-3">
+                Month / Date selection
+              </div>
               <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
@@ -566,13 +587,22 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
               <div className="text-lg font-semibold text-slate-800">
                 {nearestScheduleDate || "N/A"}
               </div>
+              <div className="text-sm text-slate-500 mt-1">
+                {daysUntilNearestSchedule == null
+                  ? ""
+                  : daysUntilNearestSchedule > 0
+                    ? `${daysUntilNearestSchedule} day(s) remaining`
+                    : daysUntilNearestSchedule === 0
+                      ? "Today"
+                      : `${Math.abs(daysUntilNearestSchedule)} day(s) ago`}
+              </div>
             </div>
           </div>
         </div>
       )}
 
       {scheduleViewMode === "all" && (
-        <div className="absolute z-20 right-3 bottom-3 bg-white/95 border-2 border-slate-300 rounded-xl shadow-xl px-6 py-4 text-sm text-slate-700 min-w-[360px]">
+        <div className="absolute z-20 right-3 bottom-3 bg-white/95 border-2 border-slate-300 rounded-xl shadow-xl px-6 py-4 text-sm text-slate-700 min-w-[200px]">
           <p className="font-semibold mb-3 text-base">Heatmap Legend</p>
           <div className="space-y-1">
             {[
@@ -588,7 +618,7 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
                   className="inline-block w-8 h-8 rounded-md border border-slate-300"
                   style={{ background: color }}
                 />
-                <span className="text-sm">{label}</span>
+                <span className="text-xl">{label}</span>
               </div>
             ))}
           </div>
