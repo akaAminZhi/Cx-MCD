@@ -247,7 +247,8 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
     let maxCount = 0;
 
     scheduledDevices.forEach((item) => {
-      const key = new Date(item.will_energized_at).toISOString().slice(0, 10);
+      const key = String(item.will_energized_at).slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return;
       byDate[key] = (byDate[key] || 0) + 1;
       maxCount = Math.max(maxCount, byDate[key]);
     });
@@ -265,6 +266,22 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
     [scheduleStats.byDate]
   );
 
+  const dateKeyToMs = useCallback(
+    (key) => new Date(`${key}T00:00:00Z`).getTime(),
+    []
+  );
+
+  const heatRange = useMemo(() => {
+    if (!sortedScheduleDates.length) return null;
+    const minMs = dateKeyToMs(sortedScheduleDates[0]);
+    const maxMs = dateKeyToMs(sortedScheduleDates[sortedScheduleDates.length - 1]);
+    return {
+      minMs,
+      maxMs,
+      spanMs: Math.max(1, maxMs - minMs),
+    };
+  }, [sortedScheduleDates, dateKeyToMs]);
+
   const nearestScheduleDate = useMemo(() => {
     if (!sortedScheduleDates.length) return "";
     const nextDate = sortedScheduleDates.find((dateKey) => dateKey >= todayDateKey);
@@ -272,23 +289,28 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
   }, [sortedScheduleDates, todayDateKey]);
 
   const buildTemporalHeatColor = useCallback((dateKey, count = 1) => {
-    if (!dateKey) return null;
-    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-    const daysDelta = Math.round(
-      (new Date(`${dateKey}T00:00:00Z`) - new Date(`${todayDateKey}T00:00:00Z`)) /
-        ONE_DAY_MS
-    );
+    if (!dateKey || !heatRange) return null;
+    const pointMs = dateKeyToMs(dateKey);
+    const ratio = (pointMs - heatRange.minMs) / heatRange.spanMs;
     const intensity = scheduleStats.maxCount
       ? Math.max(0.55, Math.min(1, count / scheduleStats.maxCount))
       : 0.75;
+    if (ratio <= 0.16) return `rgba(124,58,237,${intensity})`; // earliest
+    if (ratio <= 0.33) return `rgba(59,130,246,${intensity})`;
+    if (ratio <= 0.5) return `rgba(34,197,94,${intensity})`;
+    if (ratio <= 0.66) return `rgba(250,204,21,${intensity})`;
+    if (ratio <= 0.83) return `rgba(249,115,22,${intensity})`;
+    return `rgba(239,68,68,${intensity})`; // latest
+  }, [dateKeyToMs, heatRange, scheduleStats.maxCount]);
 
-    if (daysDelta < 0) return `rgba(124,58,237,${intensity})`; // past
-    if (daysDelta === 0) return `rgba(239,68,68,${intensity})`; // today
-    if (daysDelta <= 3) return `rgba(249,115,22,${intensity})`; // 1-3 days
-    if (daysDelta <= 7) return `rgba(250,204,21,${intensity})`; // 4-7 days
-    if (daysDelta <= 14) return `rgba(34,197,94,${intensity})`; // 8-14 days
-    return `rgba(59,130,246,${intensity})`; // 15+ days
-  }, [todayDateKey, scheduleStats.maxCount]);
+  const shiftCalendarMonth = useCallback((offset) => {
+    const [yearStr, monthStr] = calendarMonth.split("-");
+    const date = new Date(Date.UTC(Number(yearStr), Number(monthStr) - 1 + offset, 1));
+    const nextMonth = `${date.getUTCFullYear()}-${String(
+      date.getUTCMonth() + 1
+    ).padStart(2, "0")}`;
+    setCalendarMonth(nextMonth);
+  }, [calendarMonth]);
 
   const selectedDateDeviceCount = selectedScheduleDate
     ? scheduleStats.byDate[selectedScheduleDate] || 0
@@ -326,7 +348,7 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
       }
 
       const scheduleDate = item.will_energized_at
-        ? new Date(item.will_energized_at).toISOString().slice(0, 10)
+        ? String(item.will_energized_at).slice(0, 10)
         : null;
 
       if (!scheduleDate) {
@@ -419,15 +441,19 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
               </select>
             </label>
 
-            <label className="block text-xs text-slate-600">
-              Month
-              <input
-                type="month"
-                className="mt-1 w-full border border-slate-300 rounded px-3 py-2 text-base"
-                value={calendarMonth}
-                onChange={(e) => setCalendarMonth(e.target.value)}
-              />
-            </label>
+            <div className="block text-xs text-slate-600">
+              <div>Month</div>
+              <div className="mt-1 flex items-center gap-2">
+                <Button onClick={() => shiftCalendarMonth(-1)}>◀ Prev</Button>
+                <input
+                  type="month"
+                  className="w-full border border-slate-300 rounded px-3 py-2 text-base"
+                  value={calendarMonth}
+                  onChange={(e) => setCalendarMonth(e.target.value)}
+                />
+                <Button onClick={() => shiftCalendarMonth(1)}>Next ▶</Button>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-7 gap-2 text-sm text-slate-500 mb-2">
@@ -482,7 +508,8 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
               Nearest date: {nearestScheduleDate || "No scheduled energize date"}.
             </p>
             <p>
-              Heatmap colors are based on how close the date is to today.
+              Heatmap colors are based on each date&apos;s relative position in the
+              full energize schedule timeline.
             </p>
           </div>
         </div>
@@ -493,12 +520,12 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
           <p className="font-semibold mb-2">Heatmap Legend</p>
           <div className="space-y-1">
             {[
-              ["rgba(124,58,237,0.85)", "Past date"],
-              ["rgba(239,68,68,0.85)", "Today"],
-              ["rgba(249,115,22,0.85)", "1-3 days"],
-              ["rgba(250,204,21,0.85)", "4-7 days"],
-              ["rgba(34,197,94,0.85)", "8-14 days"],
-              ["rgba(59,130,246,0.85)", "15+ days"],
+              ["rgba(124,58,237,0.85)", "Earliest schedule window"],
+              ["rgba(59,130,246,0.85)", "Early schedule window"],
+              ["rgba(34,197,94,0.85)", "Middle schedule window"],
+              ["rgba(250,204,21,0.85)", "Mid-late schedule window"],
+              ["rgba(249,115,22,0.85)", "Late schedule window"],
+              ["rgba(239,68,68,0.85)", "Latest schedule window"],
             ].map(([color, label]) => (
               <div key={label} className="flex items-center gap-2">
                 <span
