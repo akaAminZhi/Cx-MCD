@@ -303,7 +303,10 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
       if (!dateKey || !heatRange) return null;
 
       const pointMs = dateKeyToMs(dateKey);
-      const ratio = (pointMs - heatRange.minMs) / heatRange.spanMs;
+      if (!Number.isFinite(pointMs)) return null;
+
+      const rawRatio = (pointMs - heatRange.minMs) / heatRange.spanMs;
+      const ratio = Number.isFinite(rawRatio) ? rawRatio : 0;
       const dateDepth = Math.max(0, Math.min(1, ratio));
       const countDepth = scheduleStats.maxCount
         ? Math.max(0, Math.min(1, count / scheduleStats.maxCount))
@@ -319,7 +322,7 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
         [239, 68, 68], // latest
       ];
 
-      const colorIdx = Math.min(5, Math.floor(ratio / 0.1667));
+      const colorIdx = Math.max(0, Math.min(5, Math.floor(ratio / 0.1667)));
       const [r, g, b] = palette[colorIdx];
 
       // 在同一色系里用不同深浅表达差异（越深表示越“重”）。
