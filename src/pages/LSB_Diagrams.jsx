@@ -401,18 +401,32 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
       </div>
 
       {showSchedulePanel && (
-        <div className="absolute z-20 left-2 top-16 w-[780px] rounded-2xl border border-indigo-100 bg-gradient-to-br from-white via-indigo-50/40 to-purple-50/50 shadow-2xl p-5 backdrop-blur">
+        <div className="absolute z-20 left-2 top-16 w-[960px] rounded-2xl border border-indigo-100 bg-gradient-to-br from-white via-indigo-50/40 to-purple-50/50 shadow-2xl p-6 backdrop-blur">
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
-              <h4 className="text-lg font-semibold text-slate-900">
+              <h4 className="text-2xl font-semibold text-slate-900">
                 Energize Schedule
               </h4>
-              <p className="text-xs text-slate-500">
+              <p className="text-sm text-slate-500">
                 Explore planned energize dates and paint devices directly on the
                 LSB diagram.
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="Close calendar"
+              className="rounded-md px-3 py-1 text-2xl leading-none text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+              onClick={() => setShowSchedulePanel(false)}
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="mb-3 rounded-xl border border-indigo-100 bg-white/90 p-4">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="text-sm font-semibold text-slate-700">
+                View mode
+              </div>
               <Button
                 onClick={() => {
                   if (!nearestScheduleDate) return;
@@ -423,73 +437,57 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
               >
                 Nearest Energize Date
               </Button>
-              <button
-                type="button"
-                className="rounded-md px-2 py-1 text-xs text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
-                onClick={() => setShowSchedulePanel(false)}
-              >
-                Close
-              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-sm">
+              {[
+                { value: "none", label: "Off" },
+                { value: "date", label: "Selected day" },
+                { value: "all", label: "All heatmap" },
+              ].map((mode) => (
+                <button
+                  key={mode.value}
+                  type="button"
+                  onClick={() => setScheduleViewMode(mode.value)}
+                  className={`rounded-lg border px-2 py-3 font-medium transition ${
+                    scheduleViewMode === mode.value
+                      ? "border-indigo-500 bg-indigo-600 text-white shadow"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:text-indigo-700"
+                  }`}
+                >
+                  {mode.label}
+                </button>
+              ))}
             </div>
           </div>
-
-          <div className="mb-4 grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-indigo-100 bg-white/90 p-3">
-              <div className="text-xs font-semibold text-slate-600 mb-2">
-                View mode
-              </div>
-              <div className="grid grid-cols-3 gap-2 text-xs">
-                {[
-                  { value: "none", label: "Off" },
-                  { value: "date", label: "Selected day" },
-                  { value: "all", label: "All heatmap" },
-                ].map((mode) => (
-                  <button
-                    key={mode.value}
-                    type="button"
-                    onClick={() => setScheduleViewMode(mode.value)}
-                    className={`rounded-lg border px-2 py-2 font-medium transition ${
-                      scheduleViewMode === mode.value
-                        ? "border-indigo-500 bg-indigo-600 text-white shadow"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:text-indigo-700"
-                    }`}
-                  >
-                    {mode.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-indigo-100 bg-white/90 p-3">
-              <div className="text-xs font-semibold text-slate-600 mb-2">
-                Month
+          <div className="mb-4 rounded-xl border border-indigo-100 bg-white/90 p-4">
+              <div className="text-sm font-semibold text-slate-700 mb-3">
+                Month / Date selection
               </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => shiftCalendarMonth(-1)}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-indigo-300 hover:text-indigo-700"
+                  className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-700 hover:border-indigo-300 hover:text-indigo-700"
                 >
                   ◀ Prev
                 </button>
                 <input
                   type="month"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-base"
                   value={calendarMonth}
                   onChange={(e) => setCalendarMonth(e.target.value)}
                 />
                 <button
                   type="button"
                   onClick={() => shiftCalendarMonth(1)}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-indigo-300 hover:text-indigo-700"
+                  className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-700 hover:border-indigo-300 hover:text-indigo-700"
                 >
                   Next ▶
                 </button>
               </div>
-            </div>
           </div>
 
-          <div className="grid grid-cols-7 gap-2 text-sm font-medium text-slate-500 mb-2">
+          <div className="grid grid-cols-7 gap-2 text-base font-medium text-slate-500 mb-2">
             {["S", "M", "T", "W", "T", "F", "S"].map((d, idx) => (
               <div key={`${d}-${idx}`} className="text-center">
                 {d}
@@ -498,7 +496,7 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
           </div>
           <div className="grid grid-cols-7 gap-2">
             {Array.from({ length: calendarDays.startWeekday }).map((_, idx) => (
-              <div key={`blank-${idx}`} className="h-16" />
+              <div key={`blank-${idx}`} className="h-20" />
             ))}
             {calendarDays.days.map((dayItem) => (
               <button
@@ -508,7 +506,7 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
                   setSelectedScheduleDate(dayItem.key);
                   setScheduleViewMode("date");
                 }}
-                className={`h-16 rounded-lg text-sm font-medium border transition ${
+                className={`h-20 rounded-lg text-base font-medium border transition ${
                   selectedScheduleDate === dayItem.key
                     ? "border-orange-500 ring-2 ring-orange-300 shadow"
                     : "border-slate-200 hover:border-indigo-300 hover:shadow"
@@ -525,34 +523,34 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
               >
                 <div>{dayItem.day}</div>
                 {dayItem.count > 0 && (
-                  <div className="text-[11px] opacity-80">{dayItem.count} dev</div>
+                  <div className="text-sm opacity-85">{dayItem.count} dev</div>
                 )}
               </button>
             ))}
           </div>
 
-          <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
+          <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
             <div className="rounded-lg border border-slate-200 bg-white/90 px-3 py-2 text-slate-600">
-              <div className="text-[10px] uppercase tracking-wide text-slate-400">
+              <div className="text-xs uppercase tracking-wide text-slate-400">
                 Scheduled devices
               </div>
-              <div className="text-base font-semibold text-slate-800">
+              <div className="text-xl font-semibold text-slate-800">
                 {scheduledDevices.length}
               </div>
             </div>
             <div className="rounded-lg border border-slate-200 bg-white/90 px-3 py-2 text-slate-600">
-              <div className="text-[10px] uppercase tracking-wide text-slate-400">
+              <div className="text-xs uppercase tracking-wide text-slate-400">
                 Selected date load
               </div>
-              <div className="text-base font-semibold text-slate-800">
+              <div className="text-xl font-semibold text-slate-800">
                 {selectedDateDeviceCount} devices
               </div>
             </div>
             <div className="rounded-lg border border-slate-200 bg-white/90 px-3 py-2 text-slate-600">
-              <div className="text-[10px] uppercase tracking-wide text-slate-400">
+              <div className="text-xs uppercase tracking-wide text-slate-400">
                 Nearest date
               </div>
-              <div className="text-sm font-semibold text-slate-800">
+              <div className="text-lg font-semibold text-slate-800">
                 {nearestScheduleDate || "N/A"}
               </div>
             </div>
