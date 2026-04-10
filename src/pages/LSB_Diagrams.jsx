@@ -422,52 +422,64 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
             </button>
           </div>
 
-          <div className="mb-3 rounded-xl border border-indigo-100 bg-white/90 p-4">
-            <div className="flex items-center justify-between gap-3 mb-3">
-              <div className="text-sm font-semibold text-slate-700">
+          <div className="mb-4 grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-indigo-100 bg-white/90 p-4">
+              <div className="text-sm font-semibold text-slate-700 mb-3">
                 View mode
               </div>
-              <Button
-                onClick={() => {
-                  if (!nearestScheduleDate) return;
-                  setSelectedScheduleDate(nearestScheduleDate);
-                  setScheduleViewMode("date");
-                  setCalendarMonth(nearestScheduleDate.slice(0, 7));
-                }}
-              >
-                Nearest Energize Date
-              </Button>
-            </div>
-            <div className="grid grid-cols-3 gap-2 text-sm">
-              {[
-                { value: "none", label: "Off" },
-                { value: "date", label: "Selected day" },
-                { value: "all", label: "All heatmap" },
-              ].map((mode) => (
-                <button
-                  key={mode.value}
-                  type="button"
-                  onClick={() => setScheduleViewMode(mode.value)}
-                  className={`rounded-lg border px-2 py-3 font-medium transition ${
-                    scheduleViewMode === mode.value
-                      ? "border-indigo-500 bg-indigo-600 text-white shadow"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:text-indigo-700"
-                  }`}
-                >
-                  {mode.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="mb-4 rounded-xl border border-indigo-100 bg-white/90 p-4">
-              <div className="text-sm font-semibold text-slate-700 mb-3">
-                Month / Date selection
+              <div className="grid grid-cols-4 gap-2 text-sm">
+                {[
+                  { value: "none", label: "Off" },
+                  { value: "date", label: "Selected day" },
+                  { value: "all", label: "All heatmap" },
+                  { value: "nearest", label: "Nearest date" },
+                ].map((mode) => {
+                  const isNearestActive =
+                    mode.value === "nearest" &&
+                    scheduleViewMode === "date" &&
+                    selectedScheduleDate === nearestScheduleDate;
+
+                  const isActive =
+                    mode.value === "nearest"
+                      ? isNearestActive
+                      : scheduleViewMode === mode.value;
+
+                  return (
+                    <button
+                      key={mode.value}
+                      type="button"
+                      onClick={() => {
+                        if (mode.value === "nearest") {
+                          if (!nearestScheduleDate) return;
+                          setSelectedScheduleDate(nearestScheduleDate);
+                          setScheduleViewMode("date");
+                          setCalendarMonth(nearestScheduleDate.slice(0, 7));
+                          return;
+                        }
+                        setScheduleViewMode(mode.value);
+                      }}
+                      className={`rounded-lg border px-2 py-3 font-medium transition ${
+                        isActive
+                          ? "border-indigo-500 bg-indigo-600 text-white shadow"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:text-indigo-700"
+                      }`}
+                    >
+                      {mode.label}
+                    </button>
+                  );
+                })}
               </div>
-              <div className="flex items-center gap-2">
+            </div>
+
+            <div className="rounded-xl border border-indigo-100 bg-white/90 p-4">
+            <div className="text-sm font-semibold text-slate-700 mb-3">
+              Month / Date selection
+            </div>
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => shiftCalendarMonth(-1)}
-                  className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-700 hover:border-indigo-300 hover:text-indigo-700"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-700 hover:border-indigo-300 hover:text-indigo-700"
                 >
                   ◀ Prev
                 </button>
@@ -480,11 +492,12 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
                 <button
                   type="button"
                   onClick={() => shiftCalendarMonth(1)}
-                  className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-700 hover:border-indigo-300 hover:text-indigo-700"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-700 hover:border-indigo-300 hover:text-indigo-700"
                 >
                   Next ▶
                 </button>
               </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-7 gap-2 text-base font-medium text-slate-500 mb-2">
