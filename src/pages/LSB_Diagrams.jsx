@@ -311,8 +311,6 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
       const countDepth = scheduleStats.maxCount
         ? Math.max(0, Math.min(1, count / scheduleStats.maxCount))
         : 0.7;
-
-      const familyDepth = 0.45 * dateDepth + 0.55 * countDepth;
       const palette = [
         [124, 58, 237], // earliest
         [59, 130, 246],
@@ -323,10 +321,18 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
       ];
 
       const colorIdx = Math.max(0, Math.min(5, Math.floor(ratio / 0.1667)));
+      const segmentStart = colorIdx / 6;
+      const segmentEnd = (colorIdx + 1) / 6;
+      const localRatio =
+        segmentEnd - segmentStart > 0
+          ? (dateDepth - segmentStart) / (segmentEnd - segmentStart)
+          : 0;
+      const withinFamilyDepth = Math.max(0, Math.min(1, localRatio));
       const [r, g, b] = palette[colorIdx];
 
       // 在同一色系里用不同深浅表达差异（越深表示越“重”）。
-      const mixWithWhite = 0.5 - familyDepth * 0.3; // 0.2 ~ 0.5
+      const familyDepth = 0.7 * withinFamilyDepth + 0.3 * countDepth;
+      const mixWithWhite = 0.65 - familyDepth * 0.55; // 0.1 ~ 0.65 (增强同色系差异)
       const shade = (channel) =>
         Math.round(channel * (1 - mixWithWhite) + 255 * mixWithWhite);
 
