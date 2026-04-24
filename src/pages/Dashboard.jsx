@@ -1,5 +1,5 @@
 // import Modal from "../ui/Modal";
-import LSB_Dashboard_Page from "../features/dashboard/LSB_Dashboard_page";
+import LSB_Dashboard_Page from "../features/dashboard/LSB_Dashboard_Page";
 
 function Dashboard() {
   return (
