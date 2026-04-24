@@ -79,6 +79,45 @@ function FocusCard({ title, value, subtitle, icon, tone, details }) {
   );
 }
 
+function ScheduledActiveCard({ stats }) {
+  return (
+    <div className="rounded-2xl border p-6 shadow-sm bg-white flex flex-col gap-6 border-indigo-200 bg-indigo-50/50">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-slate-500 text-lg uppercase tracking-[0.15em]">
+            Scheduled Active
+          </p>
+          <p className="text-lg text-slate-600 mt-2">
+            Planned energization · Today / This week / This month
+          </p>
+        </div>
+        <div className="rounded-2xl bg-white/90 p-4 shadow-inner text-indigo-600">
+          <HiMiniArrowTrendingUp className="w-10 h-10" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-4">
+          <p className="text-sm uppercase tracking-[0.15em] text-emerald-700">Today</p>
+          <p className="text-5xl font-semibold text-slate-900 mt-1">{stats.today}</p>
+        </div>
+        <div className="rounded-2xl border border-blue-200 bg-white px-4 py-4">
+          <p className="text-sm uppercase tracking-[0.15em] text-blue-700">
+            This week
+          </p>
+          <p className="text-5xl font-semibold text-slate-900 mt-1">{stats.week}</p>
+        </div>
+        <div className="rounded-2xl border border-violet-200 bg-white px-4 py-4">
+          <p className="text-sm uppercase tracking-[0.15em] text-violet-700">
+            This month
+          </p>
+          <p className="text-5xl font-semibold text-slate-900 mt-1">{stats.month}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ======================================================
 // DeviceCard
 function DeviceCard({ device }) {
@@ -341,26 +380,7 @@ function LSB_Dashboard_Page() {
             tone="border-rose-200 bg-rose-50/50"
           />
 
-          <FocusCard
-            title="Scheduled Active"
-            value={activeStats.month}
-            subtitle="Today / This week / This month"
-            icon={<HiMiniArrowTrendingUp className="w-10 h-10" />}
-            tone="border-indigo-200 bg-indigo-50/50"
-            details={
-              <div className="flex flex-wrap gap-3 text-lg">
-                <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
-                  Today {activeStats.today}
-                </span>
-                <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
-                  This week {activeStats.week}
-                </span>
-                <span className="px-3 py-1 rounded-full bg-violet-50 text-violet-700 border border-violet-100">
-                  This month {activeStats.month}
-                </span>
-              </div>
-            }
-          />
+          <ScheduledActiveCard stats={activeStats} />
         </div>
 
         <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
