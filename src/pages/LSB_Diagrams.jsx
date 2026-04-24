@@ -160,38 +160,52 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
 
   const containerRef = useRef(null);
   const [tip, setTip] = useState({ show: false, x: 0, y: 0, text: "" });
+  const getTooltipText = useCallback(
+    (payload) => {
+      if (!payload) return "Unknown";
 
-  // All heatmap 模式下关闭图纸 tooltip
-  const shouldDisableDiagramTooltip = scheduleViewMode === "all";
+      const energizeDate = payload?.will_energized_at
+        ? String(payload.will_energized_at).slice(0, 10)
+        : null;
 
+      if (scheduleViewMode === "all") {
+        return energizeDate
+          ? `Energize date: ${energizeDate}`
+          : "No energize date";
+      }
+
+      return payload?.tooltip ?? payload?.name ?? "Unknown";
+    },
+    [scheduleViewMode]
+  );
   const showTip = useCallback(
-    (e, text) => {
-      if (shouldDisableDiagramTooltip) return;
+    (e, payload) => {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
+
       setTip({
         show: true,
         x: e.clientX - rect.left + 12,
         y: e.clientY - rect.top + 12,
-        text,
+        text: getTooltipText(payload),
       });
     },
-    [shouldDisableDiagramTooltip]
+    [getTooltipText]
   );
 
   const moveTip = useCallback(
-    (e, text) => {
-      if (shouldDisableDiagramTooltip) return;
+    (e, payload) => {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
-      setTip((prev) => ({
+
+      setTip({
         show: true,
         x: e.clientX - rect.left + 12,
         y: e.clientY - rect.top + 12,
-        text: text ?? prev.text,
-      }));
+        text: getTooltipText(payload),
+      });
     },
-    [shouldDisableDiagramTooltip]
+    [getTooltipText]
   );
 
   const hideTip = useCallback(() => setTip((t) => ({ ...t, show: false })), []);
@@ -262,10 +276,8 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
 
   const diagramCallbacks = React.useMemo(
     () => ({
-      onNodeEnter: (e, payload) =>
-        showTip(e, payload?.tooltip ?? payload?.name ?? "Unknown"),
-      onNodeMove: (e, payload) =>
-        moveTip(e, payload?.tooltip ?? payload?.name ?? "Unknown"),
+      onNodeEnter: (e, payload) => showTip(e, payload),
+      onNodeMove: (e, payload) => moveTip(e, payload),
       onNodeLeave: hideTip,
       onNodeClick,
     }),
