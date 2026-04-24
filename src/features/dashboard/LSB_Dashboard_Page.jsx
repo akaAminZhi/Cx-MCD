@@ -60,6 +60,25 @@ function SummaryCard({ title, value, icon, tone }) {
   );
 }
 
+function FocusCard({ title, value, subtitle, icon, tone, details }) {
+  return (
+    <div
+      className={`rounded-2xl border p-6 shadow-sm bg-white flex flex-col gap-6 ${tone}`}
+    >
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-slate-500 text-lg uppercase tracking-[0.15em]">{title}</p>
+          <p className="text-6xl font-semibold text-slate-900 mt-2">{value}</p>
+          {subtitle && <p className="text-lg text-slate-600 mt-2">{subtitle}</p>}
+        </div>
+        <div className="rounded-2xl bg-white/90 p-4 shadow-inner text-indigo-600">{icon}</div>
+      </div>
+
+      {details ? <div className="border-t border-slate-200 pt-4">{details}</div> : null}
+    </div>
+  );
+}
+
 // ======================================================
 // DeviceCard
 function DeviceCard({ device }) {
@@ -249,6 +268,16 @@ function LSB_Dashboard_Page() {
 
   const equipments = data?.data ?? [];
 
+  const activeStats = useMemo(
+    () =>
+      data?.active_stats ?? {
+        today: 0,
+        week: 0,
+        month: 0,
+      },
+    [data]
+  );
+
   // totals from server
   const totalCount = data?.pagination?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
@@ -301,50 +330,70 @@ function LSB_Dashboard_Page() {
         </Heading>
       </header>
 
-      {/* Summary Cards (overall) */}
-      <section className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <SummaryCard
-          title="Total Devices"
-          value={summary.total}
-          icon={<HiOutlineDocumentText className="w-8 h-8" />}
-          tone="border-slate-200"
-        />
-        <SummaryCard
-          title="Energized"
-          value={summary.energized}
-          icon={<HiBolt className="w-8 h-8 icon-jump-pulse" />}
-          tone="border-emerald-200 bg-emerald-50/40"
-        />
-        <SummaryCard
-          title="Today Active"
-          value={summary.today}
-          icon={<HiMiniArrowTrendingUp className="w-8 h-8 " />}
-          tone="border-indigo-200 bg-indigo-50/40"
-        />
-        <SummaryCard
-          title="Normal (LSB)"
-          value={summary.normal}
-          icon={<PiPlugsConnectedBold className="w-8 h-8" />}
-          tone="border-emerald-100 bg-emerald-50/40"
-        />
-        <SummaryCard
-          title="Emergency (LSB)"
-          value={summary.emergency}
-          icon={<HiFire className="w-8 h-8" />}
-          tone="border-rose-100 bg-rose-50/40"
-        />
-        <SummaryCard
-          title="Scheduled"
-          value={summary.upcoming}
-          icon={<HiCalendarDays className="w-8 h-8" />}
-          tone="border-amber-100 bg-amber-50/40"
-        />
+      {/* Summary Cards (focused + secondary) */}
+      <section className="flex flex-col gap-6">
+        <div className="grid gap-6 grid-cols-1 xl:grid-cols-2">
+          <FocusCard
+            title="Energized"
+            value={summary.energized}
+            subtitle={`Scheduled ${summary.upcoming}`}
+            icon={<HiBolt className="w-10 h-10 icon-jump-pulse" />}
+            tone="border-rose-200 bg-rose-50/50"
+          />
+
+          <FocusCard
+            title="Scheduled Active"
+            value={activeStats.month}
+            subtitle="Today / This week / This month"
+            icon={<HiMiniArrowTrendingUp className="w-10 h-10" />}
+            tone="border-indigo-200 bg-indigo-50/50"
+            details={
+              <div className="flex flex-wrap gap-3 text-lg">
+                <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+                  Today {activeStats.today}
+                </span>
+                <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                  This week {activeStats.week}
+                </span>
+                <span className="px-3 py-1 rounded-full bg-violet-50 text-violet-700 border border-violet-100">
+                  This month {activeStats.month}
+                </span>
+              </div>
+            }
+          />
+        </div>
+
+        <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
+          <SummaryCard
+            title="Total Devices"
+            value={summary.total}
+            icon={<HiOutlineDocumentText className="w-8 h-8" />}
+            tone="border-slate-200"
+          />
+          <SummaryCard
+            title="Normal (LSB)"
+            value={summary.normal}
+            icon={<PiPlugsConnectedBold className="w-8 h-8" />}
+            tone="border-emerald-100 bg-emerald-50/40"
+          />
+          <SummaryCard
+            title="Emergency (LSB)"
+            value={summary.emergency}
+            icon={<HiFire className="w-8 h-8" />}
+            tone="border-rose-100 bg-rose-50/40"
+          />
+          <SummaryCard
+            title="Scheduled"
+            value={summary.upcoming}
+            icon={<HiCalendarDays className="w-8 h-8" />}
+            tone="border-amber-100 bg-amber-50/40"
+          />
+        </div>
       </section>
 
       {/* FILTER + SEARCH + PAGINATION */}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col gap-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap gap-4 items-center">
+        <div className="flex flex-wrap gap-4 items-center">
             {/* SEARCH */}
             <label className="relative">
               <HiMagnifyingGlass className="w-7 h-7 text-slate-400 absolute left-4 top-3" />
@@ -418,49 +467,53 @@ function LSB_Dashboard_Page() {
                   </option>
                 ))}
             </select>
-          </div>
-
-          {/* HINT CHIPS */}
-          <div className="flex flex-wrap gap-3 text-base">
-            <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
-              LSB Page 1 → Normal
-            </span>
-            <span className="px-3 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-100">
-              LSB Page 2 → Emergency
-            </span>
-            <span className="px-3 py-1 rounded-full bg-slate-50 text-slate-600 border border-slate-100">
-              Other pages keep original numbers
-            </span>
-          </div>
         </div>
 
-        {/* PAGINATION */}
-        <div className="flex items-center justify-between text-xl text-slate-600">
-          <p>
-            Showing{" "}
-            <strong className="text-slate-900">{equipments.length}</strong> of{" "}
-            {totalCount} matched devices (project total {summary.total})
-          </p>
+        <div className="flex flex-col gap-4 border-t border-slate-200 pt-5">
+          <div className="flex items-center justify-between text-xl text-slate-600">
+            <p>
+              Showing{" "}
+              <strong className="text-slate-900">{equipments.length}</strong> of{" "}
+              {totalCount} matched devices (project total {summary.total})
+            </p>
 
-          <div className="flex gap-3 text-xl font-semibold">
-            <button
-              className="px-4 py-2 rounded-xl border border-slate-300 disabled:opacity-40"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-            >
-              Previous
-            </button>
-            <span className="px-2 py-1 text-slate-700">
-              Page {page} / {totalPages}
-            </span>
-            <button
-              className="px-4 py-2 rounded-xl border border-slate-300 disabled:opacity-40"
-              onClick={() => setPage((p) => (p < totalPages ? p + 1 : p))}
-              disabled={page >= totalPages}
-            >
-              Next
-            </button>
+            <div className="flex gap-3 text-xl font-semibold">
+              <button
+                className="px-4 py-2 rounded-xl border border-slate-300 disabled:opacity-40"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+              >
+                Previous
+              </button>
+              <span className="px-2 py-1 text-slate-700">
+                Page {page} / {totalPages}
+              </span>
+              <button
+                className="px-4 py-2 rounded-xl border border-slate-300 disabled:opacity-40"
+                onClick={() => setPage((p) => (p < totalPages ? p + 1 : p))}
+                disabled={page >= totalPages}
+              >
+                Next
+              </button>
+            </div>
           </div>
+
+          <details className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-lg text-slate-700">
+            <summary className="cursor-pointer select-none font-semibold text-slate-800">
+              LSB rules help
+            </summary>
+            <div className="mt-3 flex flex-wrap gap-3 text-base">
+              <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+                LSB Page 1 → Normal
+              </span>
+              <span className="px-3 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-100">
+                LSB Page 2 → Emergency
+              </span>
+              <span className="px-3 py-1 rounded-full bg-slate-50 text-slate-600 border border-slate-200">
+                Other pages keep original numbers
+              </span>
+            </div>
+          </details>
         </div>
       </section>
 
@@ -481,8 +534,20 @@ function LSB_Dashboard_Page() {
         ))}
 
         {equipments.length === 0 && (
-          <div className="border border-dashed border-slate-300 rounded-2xl p-16 text-center text-slate-500 bg-white text-2xl">
-            No devices match current filters.
+          <div className="border border-dashed border-slate-300 rounded-2xl p-16 text-center text-slate-500 bg-white text-2xl flex flex-col items-center gap-6">
+            <p>No devices match current filters.</p>
+            <button
+              className="px-5 py-3 rounded-xl border border-indigo-300 bg-indigo-50 text-indigo-700 font-semibold"
+              onClick={() => {
+                setSearchTerm("");
+                setPageFilter("all");
+                setEnergizedFilter("all");
+                setSubjectFilter("all");
+                setPage(1);
+              }}
+            >
+              Reset all filters
+            </button>
           </div>
         )}
       </section>
