@@ -268,36 +268,15 @@ function LSB_Dashboard_Page() {
 
   const equipments = data?.data ?? [];
 
-  const activeBreakdown = useMemo(() => {
-    if (data?.active_stats) return data.active_stats;
-
-    const now = new Date();
-    const todayStart = startOfDay(now);
-    const weekStart = subDays(todayStart, 6);
-    const monthStart = subDays(todayStart, 29);
-
-    let today = 0;
-    let week = 0;
-    let month = 0;
-
-    for (const device of equipments) {
-      if (!device.energized || !device.updated_at) continue;
-
-      const updatedAt = new Date(device.updated_at);
-      if (Number.isNaN(updatedAt.getTime())) continue;
-
-      if (updatedAt.getTime() >= todayStart.getTime()) today += 1;
-      if (updatedAt.getTime() >= weekStart.getTime()) week += 1;
-      if (updatedAt.getTime() >= monthStart.getTime()) month += 1;
-    }
-
-    return {
-      today,
-      week,
-      month,
-      basedOnCurrentPage: true,
-    };
-  }, [data, equipments]);
+  const activeStats = useMemo(
+    () =>
+      data?.active_stats ?? {
+        today: 0,
+        week: 0,
+        month: 0,
+      },
+    [data]
+  );
 
   // totals from server
   const totalCount = data?.pagination?.total ?? 0;
@@ -363,27 +342,22 @@ function LSB_Dashboard_Page() {
           />
 
           <FocusCard
-            title="Active"
-            value={activeBreakdown.month}
+            title="Scheduled Active"
+            value={activeStats.month}
             subtitle="Today / This week / This month"
             icon={<HiMiniArrowTrendingUp className="w-10 h-10" />}
             tone="border-indigo-200 bg-indigo-50/50"
             details={
               <div className="flex flex-wrap gap-3 text-lg">
                 <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
-                  Today {activeBreakdown.today}
+                  Today {activeStats.today}
                 </span>
                 <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
-                  This week {activeBreakdown.week}
+                  This week {activeStats.week}
                 </span>
                 <span className="px-3 py-1 rounded-full bg-violet-50 text-violet-700 border border-violet-100">
-                  This month {activeBreakdown.month}
+                  This month {activeStats.month}
                 </span>
-                {activeBreakdown.basedOnCurrentPage && (
-                  <span className="px-3 py-1 rounded-full bg-slate-50 text-slate-600 border border-slate-200">
-                    Based on current page results
-                  </span>
-                )}
               </div>
             }
           />
