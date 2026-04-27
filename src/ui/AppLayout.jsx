@@ -1,21 +1,17 @@
 import { Outlet } from "react-router";
-import Sidebar from "./Sidebar";
 import Header from "./Header";
 
-
 function AppLayout() {
-
   return (
-    
+    <div className="h-screen max-w-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 text-slate-900 overflow-hidden">
+      <div className="h-full w-full flex flex-col">
+        <Header />
 
-      <div className="grid grid-cols-[20rem_1fr] grid-rows-[auto_1fr] h-screen max-w-screen">
-        <Header></Header>
-        <Sidebar></Sidebar>
-        <main className="bg-gray-50 p-10 relative  whitespace-normal break-all">
+        <main className="flex-1 overflow-auto p-10 relative whitespace-normal break-all">
           <Outlet></Outlet>
         </main>
       </div>
-    
+    </div>
   );
 }
 
