@@ -397,7 +397,9 @@ function DiagramInner({
 
   const scheduledDevices = useMemo(() => {
     if (!Array.isArray(devicesData?.data)) return [];
-    return devicesData.data.filter((item) => item?.will_energized_at);
+    return devicesData.data.filter(
+      (item) => item?.will_energized_at && !item?.energized
+    );
   }, [devicesData]);
 
   const scheduleStats = useMemo(() => {
