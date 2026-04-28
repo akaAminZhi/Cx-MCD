@@ -75,6 +75,7 @@ const HEAT_BUCKET_ORDER = [
 export default function LSB_Diagrams() {
   const [active, setActive] = useState("Normal");
   const [selectedDevice, setSelectedDevice] = useState(null);
+  const printHandlerRef = useRef(null);
 
   const qc = useQueryClient();
 
@@ -106,6 +107,12 @@ export default function LSB_Diagrams() {
             {label}
           </Button>
         ))}
+        <Button
+          onClick={() => printHandlerRef.current?.()}
+          disabled={!printHandlerRef.current}
+        >
+          打印当前图纸
+        </Button>
       </div>
 
       <div className="m-2">
@@ -115,6 +122,9 @@ export default function LSB_Diagrams() {
             projectId={projectId}
             onSelectDevice={setSelectedDevice}
             onChangeActive={setActive}
+            onRegisterPrint={(handler) => {
+              printHandlerRef.current = handler;
+            }}
           />
         </Suspense>
       </div>
@@ -133,7 +143,13 @@ export default function LSB_Diagrams() {
   );
 }
 
-function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
+function DiagramInner({
+  active,
+  projectId,
+  onSelectDevice,
+  onChangeActive,
+  onRegisterPrint,
+}) {
   const { open } = useModal();
   const { data: devicesData } = useProjecDevices(projectId);
 
@@ -178,6 +194,42 @@ function DiagramInner({ active, projectId, onSelectDevice, onChangeActive }) {
     },
     [scheduleViewMode]
   );
+
+  const handlePrintCurrent = useCallback(() => {
+    const svgElement = containerRef.current?.querySelector("svg");
+    if (!svgElement) {
+      alert("未找到可打印的图纸");
+      return;
+    }
+
+    const printWindow = window.open("", "_blank", "width=1280,height=900");
+    if (!printWindow) {
+      alert("无法打开打印窗口，请检查浏览器弹窗设置");
+      return;
+    }
+
+    const svgMarkup = svgElement.outerHTML;
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>LSB ${active} Diagram</title>
+          <style>
+            body { margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #fff; }
+            svg { width: 100%; height: auto; max-height: 100vh; }
+          </style>
+        </head>
+        <body>${svgMarkup}</body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  }, [active]);
+
+  useEffect(() => {
+    onRegisterPrint?.(handlePrintCurrent);
+    return () => onRegisterPrint?.(null);
+  }, [handlePrintCurrent, onRegisterPrint]);
   const showTip = useCallback(
     (e, payload) => {
       const rect = containerRef.current?.getBoundingClientRect();
