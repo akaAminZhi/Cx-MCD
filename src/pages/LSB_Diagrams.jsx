@@ -179,6 +179,8 @@ function DiagramInner({
 
   const containerRef = useRef(null);
   const [tip, setTip] = useState({ show: false, x: 0, y: 0, text: "" });
+  const tipRafRef = useRef(null);
+  const queuedTipRef = useRef(null);
   const getTooltipText = useCallback(
     (payload) => {
       if (!payload) return "Unknown";
@@ -292,37 +294,53 @@ function DiagramInner({
     onRegisterPrint?.(handlePrintCurrent);
     return () => onRegisterPrint?.(null);
   }, [handlePrintCurrent, onRegisterPrint]);
-  const showTip = useCallback(
+  const queueTipUpdate = useCallback(
     (e, payload) => {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
 
-      setTip({
+      queuedTipRef.current = {
         show: true,
         x: e.clientX - rect.left + 12,
         y: e.clientY - rect.top + 12,
         text: getTooltipText(payload),
+      };
+
+      if (tipRafRef.current != null) return;
+
+      tipRafRef.current = requestAnimationFrame(() => {
+        tipRafRef.current = null;
+        if (queuedTipRef.current) setTip(queuedTipRef.current);
       });
     },
     [getTooltipText]
+  );
+
+  const showTip = useCallback(
+    (e, payload) => queueTipUpdate(e, payload),
+    [queueTipUpdate]
   );
 
   const moveTip = useCallback(
-    (e, payload) => {
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect) return;
-
-      setTip({
-        show: true,
-        x: e.clientX - rect.left + 12,
-        y: e.clientY - rect.top + 12,
-        text: getTooltipText(payload),
-      });
-    },
-    [getTooltipText]
+    (e, payload) => queueTipUpdate(e, payload),
+    [queueTipUpdate]
   );
 
-  const hideTip = useCallback(() => setTip((t) => ({ ...t, show: false })), []);
+  const hideTip = useCallback(() => {
+    if (tipRafRef.current != null) {
+      cancelAnimationFrame(tipRafRef.current);
+      tipRafRef.current = null;
+    }
+    queuedTipRef.current = null;
+    setTip((t) => ({ ...t, show: false }));
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (tipRafRef.current != null) cancelAnimationFrame(tipRafRef.current);
+    },
+    []
+  );
 
   const handlePickDevice = useCallback(
     (item) => {
@@ -599,6 +617,42 @@ function DiagramInner({
     [scheduleViewMode, selectedScheduleDate, buildTemporalHeatColor]
   );
 
+  const allHeatColorByDate = useMemo(() => {
+    if (scheduleViewMode !== "all") return null;
+    const dateToColor = new Map();
+    Object.keys(scheduleStats.byDate).forEach((dateKey) => {
+      dateToColor.set(dateKey, buildTemporalHeatColor(dateKey));
+    });
+    return dateToColor;
+  }, [scheduleViewMode, scheduleStats.byDate, buildTemporalHeatColor]);
+
+  const getDeviceVisualStateFast = useCallback(
+    (item) => {
+      if (
+        scheduleViewMode === "all" &&
+        allHeatColorByDate &&
+        item &&
+        !item.energized
+      ) {
+        const scheduleDate = item.will_energized_at
+          ? String(item.will_energized_at).slice(0, 10)
+          : null;
+        if (!scheduleDate) {
+          return {
+            energizedToday: item.energized_today,
+            colorOverride: undefined,
+          };
+        }
+        return {
+          energizedToday: false,
+          colorOverride: allHeatColorByDate.get(scheduleDate),
+        };
+      }
+      return getDeviceVisualState(item);
+    },
+    [scheduleViewMode, allHeatColorByDate, getDeviceVisualState]
+  );
+
   return (
     <div ref={containerRef} style={{ position: "relative", height: 800 }}>
       <div className="absolute z-10 left-2 top-2 bg-white/85 backdrop-blur px-2 py-2 rounded shadow flex gap-2 items-center">
@@ -865,7 +919,7 @@ function DiagramInner({
           {...diagramCallbacks}
           highlightDeviceId={highlightDeviceId}
           selectedDevice={selectedDeviceLocal}
-          getDeviceVisualState={getDeviceVisualState}
+          getDeviceVisualState={getDeviceVisualStateFast}
         />
       </PanZoomSVG>
 
