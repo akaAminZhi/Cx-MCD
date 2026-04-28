@@ -152,6 +152,9 @@ function DiagramInner({
 }) {
   const { open } = useModal();
   const { data: devicesData } = useProjecDevices(projectId);
+  const { data: scheduleDevicesData } = useProjecDevices(projectId, {
+    scope: "equipment",
+  });
 
   const [highlightDeviceId, setHighlightDeviceId] = useState(null);
   const [selectedDeviceLocal, setSelectedDeviceLocal] = useState(null);
@@ -396,11 +399,11 @@ function DiagramInner({
   );
 
   const scheduledDevices = useMemo(() => {
-    if (!Array.isArray(devicesData?.data)) return [];
-    return devicesData.data.filter(
+    if (!Array.isArray(scheduleDevicesData?.data)) return [];
+    return scheduleDevicesData.data.filter(
       (item) => item?.will_energized_at && !item?.energized
     );
-  }, [devicesData]);
+  }, [scheduleDevicesData]);
 
   const scheduleStats = useMemo(() => {
     const byDate = {};
