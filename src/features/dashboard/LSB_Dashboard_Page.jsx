@@ -67,14 +67,22 @@ function FocusCard({ title, value, subtitle, icon, tone, details }) {
     >
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-slate-500 text-lg uppercase tracking-[0.15em]">{title}</p>
+          <p className="text-slate-500 text-lg uppercase tracking-[0.15em]">
+            {title}
+          </p>
           <p className="text-6xl font-semibold text-slate-900 mt-2">{value}</p>
-          {subtitle && <p className="text-lg text-slate-600 mt-2">{subtitle}</p>}
+          {subtitle && (
+            <p className="text-lg text-slate-600 mt-2">{subtitle}</p>
+          )}
         </div>
-        <div className="rounded-2xl bg-white/90 p-4 shadow-inner text-indigo-600">{icon}</div>
+        <div className="rounded-2xl bg-white/90 p-4 shadow-inner text-indigo-600">
+          {icon}
+        </div>
       </div>
 
-      {details ? <div className="border-t border-slate-200 pt-4">{details}</div> : null}
+      {details ? (
+        <div className="border-t border-slate-200 pt-4">{details}</div>
+      ) : null}
     </div>
   );
 }
@@ -98,20 +106,28 @@ function ScheduledActiveCard({ stats }) {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-4">
-          <p className="text-sm uppercase tracking-[0.15em] text-emerald-700">Today</p>
-          <p className="text-5xl font-semibold text-slate-900 mt-1">{stats.today}</p>
+          <p className="text-sm uppercase tracking-[0.15em] text-emerald-700">
+            Today
+          </p>
+          <p className="text-5xl font-semibold text-slate-900 mt-1">
+            {stats.today}
+          </p>
         </div>
         <div className="rounded-2xl border border-blue-200 bg-white px-4 py-4">
           <p className="text-sm uppercase tracking-[0.15em] text-blue-700">
             This week
           </p>
-          <p className="text-5xl font-semibold text-slate-900 mt-1">{stats.week}</p>
+          <p className="text-5xl font-semibold text-slate-900 mt-1">
+            {stats.week}
+          </p>
         </div>
         <div className="rounded-2xl border border-violet-200 bg-white px-4 py-4">
           <p className="text-sm uppercase tracking-[0.15em] text-violet-700">
             This month
           </p>
-          <p className="text-5xl font-semibold text-slate-900 mt-1">{stats.month}</p>
+          <p className="text-5xl font-semibold text-slate-900 mt-1">
+            {stats.month}
+          </p>
         </div>
       </div>
     </div>
@@ -382,12 +398,6 @@ function LSB_Dashboard_Page() {
 
   return (
     <div className="flex flex-col gap-10 text-xl pb-16">
-      <header>
-        <Heading Tag="h1" className="text-5xl font-bold text-slate-900">
-          Device Dashboard
-        </Heading>
-      </header>
-
       {/* Summary Cards (focused + secondary) */}
       <section className="flex flex-col gap-6">
         <div className="grid gap-6 grid-cols-1 xl:grid-cols-2">
@@ -433,79 +443,79 @@ function LSB_Dashboard_Page() {
       {/* FILTER + SEARCH + PAGINATION */}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col gap-5">
         <div className="flex flex-wrap gap-4 items-center">
-            {/* SEARCH */}
-            <label className="relative">
-              <HiMagnifyingGlass className="w-7 h-7 text-slate-400 absolute left-4 top-3" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setPage(1);
-                }}
-                placeholder="Search by ID / subject / text"
-                className="
+          {/* SEARCH */}
+          <label className="relative">
+            <HiMagnifyingGlass className="w-7 h-7 text-slate-400 absolute left-4 top-3" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Search by ID / subject / text"
+              className="
                   pl-14 pr-4 py-3 border rounded-xl text-xl w-80
                   focus:outline focus:outline-2 focus:outline-indigo-500
                 "
-              />
-            </label>
+            />
+          </label>
 
-            {/* PAGE FILTER */}
-            <select
-              value={pageFilter}
-              onChange={(e) => {
-                setPageFilter(e.target.value);
-                setPage(1);
-              }}
-              className="
+          {/* PAGE FILTER */}
+          <select
+            value={pageFilter}
+            onChange={(e) => {
+              setPageFilter(e.target.value);
+              setPage(1);
+            }}
+            className="
                 border rounded-xl px-4 py-2 text-xl
                 focus:outline focus:outline-2 focus:outline-indigo-500
               "
-            >
-              <option value="all">All pages</option>
-              <option value="normal">Normal (LSB)</option>
-              <option value="emergency">Emergency (LSB)</option>
-            </select>
+          >
+            <option value="all">All pages</option>
+            <option value="normal">Normal (LSB)</option>
+            <option value="emergency">Emergency (LSB)</option>
+          </select>
 
-            {/* ENERGY FILTER */}
-            <select
-              value={energizedFilter}
-              onChange={(e) => {
-                setEnergizedFilter(e.target.value);
-                setPage(1);
-              }}
-              className="
+          {/* ENERGY FILTER */}
+          <select
+            value={energizedFilter}
+            onChange={(e) => {
+              setEnergizedFilter(e.target.value);
+              setPage(1);
+            }}
+            className="
                 border rounded-xl px-4 py-2 text-xl
                 focus:outline focus:outline-2 focus:outline-indigo-500
               "
-            >
-              <option value="all">All energy states</option>
-              <option value="on">Energized</option>
-              <option value="off">Not energized</option>
-            </select>
+          >
+            <option value="all">All energy states</option>
+            <option value="on">Energized</option>
+            <option value="off">Not energized</option>
+          </select>
 
-            {/* SUBJECT FILTER */}
-            <select
-              value={subjectFilter}
-              onChange={(e) => {
-                setSubjectFilter(e.target.value);
-                setPage(1);
-              }}
-              className="
+          {/* SUBJECT FILTER */}
+          <select
+            value={subjectFilter}
+            onChange={(e) => {
+              setSubjectFilter(e.target.value);
+              setPage(1);
+            }}
+            className="
                 border rounded-xl px-4 py-2 text-xl
                 focus:outline focus:outline-2 focus:outline-indigo-500
               "
-            >
-              <option value="all">All subjects</option>
-              {subjectOptions
-                .filter((s) => s !== "all")
-                .map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-            </select>
+          >
+            <option value="all">All subjects</option>
+            {subjectOptions
+              .filter((s) => s !== "all")
+              .map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+          </select>
         </div>
 
         <div className="flex flex-col gap-4 border-t border-slate-200 pt-5">
