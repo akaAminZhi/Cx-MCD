@@ -111,7 +111,7 @@ export default function LSB_Diagrams() {
           onClick={() => printHandlerRef.current?.()}
           disabled={!printHandlerRef.current}
         >
-          打印当前图纸
+          打印整张图（矢量）
         </Button>
       </div>
 
@@ -198,8 +198,9 @@ function DiagramInner({
   const handlePrintCurrent = useCallback(() => {
     const printTarget =
       containerRef.current?.querySelector(".lsb-print-target") ?? null;
+    const svgElement = printTarget?.querySelector("svg") ?? null;
 
-    if (!printTarget) {
+    if (!printTarget || !svgElement) {
       alert("未找到可打印的图纸");
       return;
     }
@@ -210,8 +211,39 @@ function DiagramInner({
       return;
     }
 
-    const { clientWidth, clientHeight } = printTarget;
-    const printMarkup = printTarget.outerHTML;
+    const sceneGroup = svgElement.querySelector("g");
+    if (!sceneGroup) {
+      alert("图纸结构异常，无法生成完整打印内容");
+      return;
+    }
+
+    const originalTransform = sceneGroup.getAttribute("transform");
+    sceneGroup.removeAttribute("transform");
+    const bbox = sceneGroup.getBBox();
+    if (originalTransform) sceneGroup.setAttribute("transform", originalTransform);
+
+    if (!bbox || bbox.width <= 0 || bbox.height <= 0) {
+      alert("无法计算图纸边界，请稍后重试");
+      return;
+    }
+
+    const padding = 40;
+    const viewBox = [
+      bbox.x - padding,
+      bbox.y - padding,
+      bbox.width + padding * 2,
+      bbox.height + padding * 2,
+    ].join(" ");
+
+    const printSvg = svgElement.cloneNode(true);
+    const printGroup = printSvg.querySelector("g");
+    printGroup?.removeAttribute("transform");
+    printSvg.setAttribute("viewBox", viewBox);
+    printSvg.setAttribute("width", `${Math.ceil(bbox.width + padding * 2)}`);
+    printSvg.setAttribute("height", `${Math.ceil(bbox.height + padding * 2)}`);
+    printSvg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+
+    const printMarkup = printSvg.outerHTML;
 
     printWindow.document.write(`
       <html>
@@ -229,12 +261,17 @@ function DiagramInner({
               box-sizing: border-box;
             }
             .print-stage {
-              width: ${clientWidth}px;
-              height: ${clientHeight}px;
-              overflow: hidden;
+              width: 100%;
+              height: 100%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              overflow: visible;
             }
-            .print-stage * {
-              box-sizing: border-box;
+            .print-stage svg {
+              width: 100%;
+              height: auto;
+              max-height: calc(100vh - 20px);
             }
           </style>
         </head>
