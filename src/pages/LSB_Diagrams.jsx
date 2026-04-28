@@ -196,8 +196,10 @@ function DiagramInner({
   );
 
   const handlePrintCurrent = useCallback(() => {
-    const svgElement = containerRef.current?.querySelector("svg");
-    if (!svgElement) {
+    const printTarget =
+      containerRef.current?.querySelector(".lsb-print-target") ?? null;
+
+    if (!printTarget) {
       alert("未找到可打印的图纸");
       return;
     }
@@ -208,17 +210,37 @@ function DiagramInner({
       return;
     }
 
-    const svgMarkup = svgElement.outerHTML;
+    const { clientWidth, clientHeight } = printTarget;
+    const printMarkup = printTarget.outerHTML;
+
     printWindow.document.write(`
       <html>
         <head>
           <title>LSB ${active} Diagram</title>
           <style>
-            body { margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #fff; }
-            svg { width: 100%; height: auto; max-height: 100vh; }
+            @page { size: landscape; margin: 8mm; }
+            html, body { margin: 0; background: #fff; }
+            body {
+              min-height: 100vh;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              padding: 8px;
+              box-sizing: border-box;
+            }
+            .print-stage {
+              width: ${clientWidth}px;
+              height: ${clientHeight}px;
+              overflow: hidden;
+            }
+            .print-stage * {
+              box-sizing: border-box;
+            }
           </style>
         </head>
-        <body>${svgMarkup}</body>
+        <body>
+          <div class="print-stage">${printMarkup}</div>
+        </body>
       </html>
     `);
     printWindow.document.close();
@@ -792,6 +814,7 @@ function DiagramInner({
 
       <PanZoomSVG
         key={active}
+        className="lsb-print-target"
         ref={attachPanZoomRef(active)}
         stateRef={{ current: panZoomStateRef }}
         height="800px"
