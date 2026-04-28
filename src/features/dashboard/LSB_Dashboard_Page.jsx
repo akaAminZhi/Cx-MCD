@@ -266,6 +266,25 @@ function LSB_Dashboard_Page() {
     Number.isFinite(initialPage) && initialPage > 0 ? initialPage : 1
   );
 
+  // keep local filter state in sync with URL when navigation changes query
+  useEffect(() => {
+    const nextSearch = searchParams.get("q") ?? "";
+    const nextPageFilter = searchParams.get("pageFilter") ?? "all";
+    const nextEnergized = searchParams.get("energized") ?? "all";
+    const nextSubject = searchParams.get("subject") ?? "all";
+    const nextPageRaw = parseInt(searchParams.get("page") ?? "1", 10);
+    const nextPage =
+      Number.isFinite(nextPageRaw) && nextPageRaw > 0 ? nextPageRaw : 1;
+
+    setSearchTerm((prev) => (prev === nextSearch ? prev : nextSearch));
+    setPageFilter((prev) => (prev === nextPageFilter ? prev : nextPageFilter));
+    setEnergizedFilter((prev) =>
+      prev === nextEnergized ? prev : nextEnergized
+    );
+    setSubjectFilter((prev) => (prev === nextSubject ? prev : nextSubject));
+    setPage((prev) => (prev === nextPage ? prev : nextPage));
+  }, [searchParams]);
+
   // UI page size and server size kept same for simplicity
   const pageSize = 9;
 
