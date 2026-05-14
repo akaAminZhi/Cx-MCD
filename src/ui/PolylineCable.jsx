@@ -5,7 +5,7 @@ import { COLOR_MAP } from "../utils/constans";
 
 function PolylineCable({
   id,
-  points = [], // [[x,y], [x,y], ...]
+  points = [],
   color = "#111",
   width = 2,
   dashed = false,
@@ -15,7 +15,7 @@ function PolylineCable({
   highlight = false,
 
   // 箭头 & 文本
-  arrowType, // "head" | "tail"
+  arrowType,
   label,
   showLabel = true,
 
@@ -56,7 +56,6 @@ function PolylineCable({
   const markerEndId = `arrow-end-${safeId}`;
   const markerStartId = `arrow-start-${safeId}`;
 
-  // ⭐ 箭头命中区域半径（可以根据喜好调大一点）
   const hitRadius = Math.max(strokeWidth + 10, 14);
 
   const cursor = onClick ? "pointer" : "default";
@@ -91,7 +90,6 @@ function PolylineCable({
         </marker>
       </defs>
 
-      {/* 可见线条 */}
       <polyline
         points={pointsStr}
         fill="none"
@@ -102,9 +100,7 @@ function PolylineCable({
         vectorEffect="non-scaling-stroke"
         strokeDasharray={dashed ? "6 6" : undefined}
         markerEnd={arrowType === "head" ? `url(#${markerEndId})` : undefined}
-        markerStart={
-          arrowType === "tail" ? `url(#${markerStartId})` : undefined
-        }
+        markerStart={arrowType === "tail" ? `url(#${markerStartId})` : undefined}
         style={{ cursor }}
         onClick={onClick}
         onMouseEnter={onMouseEnter}
@@ -112,7 +108,6 @@ function PolylineCable({
         onMouseLeave={onMouseLeave}
       />
 
-      {/* 文本：to / from XXX */}
       {showLabel && labelPos && labelText && (
         <text
           x={labelPos[0] + 6}
@@ -125,9 +120,7 @@ function PolylineCable({
         </text>
       )}
 
-      {/* 交互命中层：粗透明 polyline + 箭头区域的透明 circle */}
       <g pointerEvents="stroke">
-        {/* 线条命中层 */}
         <polyline
           points={pointsStr}
           fill="none"
@@ -142,7 +135,6 @@ function PolylineCable({
           onMouseLeave={onMouseLeave}
         />
 
-        {/* ⭐ 箭头命中 circle：head */}
         {arrowType === "head" && end && (
           <circle
             cx={end[0]}
@@ -159,7 +151,6 @@ function PolylineCable({
           />
         )}
 
-        {/* ⭐ 箭头命中 circle：tail */}
         {arrowType === "tail" && start && (
           <circle
             cx={start[0]}
@@ -224,6 +215,10 @@ function isEqual(prev, next) {
     prev.label === next.label &&
     prev.showLabel === next.showLabel &&
     prev.color === next.color &&
+    prev.onClick === next.onClick &&
+    prev.onMouseEnter === next.onMouseEnter &&
+    prev.onMouseMove === next.onMouseMove &&
+    prev.onMouseLeave === next.onMouseLeave &&
     arePointsEqual(prev.points, next.points)
   );
 }

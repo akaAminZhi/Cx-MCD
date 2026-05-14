@@ -27,7 +27,6 @@ function Breaker({
 
   const isClosed = state === "CLOSE";
 
-  const strokeColor = "#000000";
   const stateColor = isClosed ? COLOR_MAP.red500 : COLOR_MAP.green500;
 
   return (
@@ -149,7 +148,11 @@ function isEqual(prev, next) {
     prev.x2 === next.x2 &&
     prev.y2 === next.y2 &&
     prev.name === next.name &&
-    prev.state === next.state
+    prev.state === next.state &&
+    prev.onClick === next.onClick &&
+    prev.onMouseEnter === next.onMouseEnter &&
+    prev.onMouseMove === next.onMouseMove &&
+    prev.onMouseLeave === next.onMouseLeave
   );
 }
 

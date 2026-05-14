@@ -8,11 +8,9 @@ function rectToSegment(rect) {
   const w = Math.abs(x2 - x1);
   const h = Math.abs(y2 - y1);
   if (w >= h) {
-    // 水平：取中线
     const y = (y1 + y2) / 2;
     return { a: [x1, y], b: [x2, y] };
   } else {
-    // 垂直
     const x = (x1 + x2) / 2;
     return { a: [x, y1], b: [x, y2] };
   }
@@ -45,7 +43,6 @@ function BusLine({
   const midY = (a[1] + b[1]) / 2;
   return (
     <g data-id={id}>
-      {/* 可见总线 */}
       <line
         x1={a[0]}
         y1={a[1]}
@@ -60,7 +57,7 @@ function BusLine({
       {name && (
         <text
           x={midX - 20}
-          y={midY - width * 2} // 在线条上方一点
+          y={midY - width * 2}
           textAnchor="middle"
           fontSize={10}
           fill="#333"
@@ -69,7 +66,6 @@ function BusLine({
           {name}
         </text>
       )}
-      {/* 交互命中层 */}
       <line
         x1={a[0]}
         y1={a[1]}
@@ -95,6 +91,8 @@ BusLine.propTypes = {
   color: PropTypes.string,
   width: PropTypes.number,
   dashed: PropTypes.bool,
+  energized: PropTypes.bool,
+  energizedToday: PropTypes.bool,
   colorOverride: PropTypes.string,
   onClick: PropTypes.func,
   onMouseEnter: PropTypes.func,
@@ -111,6 +109,10 @@ function isEqual(prev, next) {
     prev.energizedToday === next.energizedToday &&
     prev.colorOverride === next.colorOverride &&
     prev.name === next.name &&
+    prev.onClick === next.onClick &&
+    prev.onMouseEnter === next.onMouseEnter &&
+    prev.onMouseMove === next.onMouseMove &&
+    prev.onMouseLeave === next.onMouseLeave &&
     prev.rect_px?.length === next.rect_px?.length &&
     prev.rect_px?.every((value, idx) => value === next.rect_px?.[idx])
   );

@@ -28,7 +28,6 @@ function BusBreakerSwitch({
   const isClosed = state === "CLOSE";
   const stateColor = isClosed ? COLOR_MAP.red500 : COLOR_MAP.green500;
   const shellStroke = stateColor; // 壳体跟状态同色，像你截图那样
-  const symbolStroke = "#444"; // 固定线条用灰色
 
   // 壳体在本地坐标中的位置
   const shellX = width * 0.1;
@@ -222,7 +221,11 @@ function isEqual(prev, next) {
     prev.x2 === next.x2 &&
     prev.y2 === next.y2 &&
     prev.name === next.name &&
-    prev.state === next.state
+    prev.state === next.state &&
+    prev.onClick === next.onClick &&
+    prev.onMouseEnter === next.onMouseEnter &&
+    prev.onMouseMove === next.onMouseMove &&
+    prev.onMouseLeave === next.onMouseLeave
   );
 }
 

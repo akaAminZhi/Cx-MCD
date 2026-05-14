@@ -144,7 +144,12 @@ Transformer.propTypes = {
   y2: PropTypes.number.isRequired,
 
   energized: PropTypes.bool,
+  energizedToday: PropTypes.bool,
   colorOverride: PropTypes.string,
+  onClick: PropTypes.func,
+  onMouseEnter: PropTypes.func,
+  onMouseMove: PropTypes.func,
+  onMouseLeave: PropTypes.func,
 };
 
 function isEqual(prev, next) {
@@ -158,7 +163,11 @@ function isEqual(prev, next) {
     prev.energized === next.energized &&
     prev.energizedToday === next.energizedToday &&
     prev.colorOverride === next.colorOverride &&
-    prev.name === next.name
+    prev.name === next.name &&
+    prev.onClick === next.onClick &&
+    prev.onMouseEnter === next.onMouseEnter &&
+    prev.onMouseMove === next.onMouseMove &&
+    prev.onMouseLeave === next.onMouseLeave
   );
 }
 

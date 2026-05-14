@@ -103,6 +103,7 @@ Panelboard.propTypes = {
   x2: PropTypes.number.isRequired,
   y2: PropTypes.number.isRequired,
   energized: PropTypes.bool,
+  energizedToday: PropTypes.bool,
   colorOverride: PropTypes.string,
   onClick: PropTypes.func,
   onMouseEnter: PropTypes.func,
@@ -119,7 +120,11 @@ function isEqual(prev, next) {
     prev.name === next.name &&
     prev.energized === next.energized &&
     prev.energizedToday === next.energizedToday &&
-    prev.colorOverride === next.colorOverride
+    prev.colorOverride === next.colorOverride &&
+    prev.onClick === next.onClick &&
+    prev.onMouseEnter === next.onMouseEnter &&
+    prev.onMouseMove === next.onMouseMove &&
+    prev.onMouseLeave === next.onMouseLeave
   );
 }
 
