@@ -33,7 +33,7 @@ const DIAGRAM_CONFIG = {
 
 const DIAGRAMS = Object.keys(DIAGRAM_CONFIG);
 const projectId = "lsb";
-const SUBJECTS = ["panel board", "ATS", "Generator", "transformer"];
+const SUBJECTS = ["panel board", "ATS", "Generator", "transformer", "Bus Duct"];
 
 // 越早越迫切：Earliest 最深、Latest 最浅
 const HEAT_BUCKET_COLORS = {
@@ -225,7 +225,8 @@ function DiagramInner({
     const originalTransform = sceneGroup.getAttribute("transform");
     sceneGroup.removeAttribute("transform");
     const bbox = sceneGroup.getBBox();
-    if (originalTransform) sceneGroup.setAttribute("transform", originalTransform);
+    if (originalTransform)
+      sceneGroup.setAttribute("transform", originalTransform);
 
     if (!bbox || bbox.width <= 0 || bbox.height <= 0) {
       alert("无法计算图纸边界，请稍后重试");
