@@ -166,6 +166,24 @@ function DiagramInner({
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
 
+  const latestDeviceById = useMemo(() => {
+    const map = new Map();
+
+    const mergeDevice = (item) => {
+      if (!item?.id) return;
+
+      map.set(item.id, {
+        ...(map.get(item.id) || {}),
+        ...item,
+      });
+    };
+
+    devicesData?.data?.forEach(mergeDevice);
+    scheduleDevicesData?.data?.forEach(mergeDevice);
+
+    return map;
+  }, [devicesData, scheduleDevicesData]);
+
   const [pendingFocus, setPendingFocus] = useState(null);
 
   const panZoomRefs = useRef({});
@@ -397,11 +415,18 @@ function DiagramInner({
 
   const onNodeClick = useCallback(
     (payload) => {
-      setSelectedDeviceLocal(payload);
-      onSelectDevice?.(payload);
+      const latestDevice = latestDeviceById.get(payload?.id);
+
+      const mergedDevice = {
+        ...payload,
+        ...(latestDevice || {}),
+      };
+
+      setSelectedDeviceLocal(mergedDevice);
+      onSelectDevice?.(mergedDevice);
       queueMicrotask(() => open("device"));
     },
-    [open, onSelectDevice]
+    [latestDeviceById, open, onSelectDevice]
   );
 
   const { Component } = DIAGRAM_CONFIG[active];

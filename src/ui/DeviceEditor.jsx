@@ -262,10 +262,13 @@ export default function DeviceEditor({ device, projectId, closeModal }) {
       const res = await axios.put(`/api/v1/devices/${id}`, payload);
       return res.data;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["projectEquipments", projectId] });
-      qc.invalidateQueries({ queryKey: ["devices", projectId] });
-      qc.invalidateQueries({ queryKey: ["deviceFiles"] });
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["devices", projectId, "all"] }),
+        qc.invalidateQueries({ queryKey: ["devices", projectId, "equipment"] }),
+        qc.invalidateQueries({ queryKey: ["deviceFiles"] }),
+      ]);
+
       closeModal?.();
     },
   });
